@@ -181,7 +181,8 @@ if optf
         % mid-point rule integration
         aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
     (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ;
-        statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp ))   + aifterm ;
+        %statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp ))   + aifterm ;
+        statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp )) ;
         statevariable(:,iii+1,iqp) =  cos(FaList(:,iii+1)).* statevariable(:,iii+1,iqp);
       end
     end
@@ -227,7 +228,7 @@ if optf
     
     x0.FaList = params.FaList;
     x0.TRlist = params.TRList; 
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true)
+    myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
