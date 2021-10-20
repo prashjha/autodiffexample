@@ -8,7 +8,7 @@ close all
 clc
 N_vect = round(linspace(5,60,15));
 %% Variable Setup
-Ntime = 3;
+Ntime = 5;
 TR = 2;
 TR_list = (0:(Ntime-1))*TR;
 T1a = 43;
@@ -125,7 +125,7 @@ if optf
     % setup optimization variables
     Nspecies = 2
     FaList = optimvar('FaList',2,Ntime);
-    TRList = optimvar('TRList',1,Ntime);
+    TRList = TR_list;
     diffTR = diff(TRList);
     NGauss  = 2
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
@@ -222,12 +222,11 @@ if optf
     % View the new problem.
     
     %show(convprob)
-    %problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjective');
+    problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjective');
     %% 
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.TRList = params.TRList; 
     myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
@@ -235,7 +234,6 @@ if optf
 
     toc;
 
-    params.TRList = popt.TRList;
     params.FaList = popt.FaList;
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
     figure(4)
