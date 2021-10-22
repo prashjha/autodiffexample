@@ -165,13 +165,19 @@ if optf
       %expATR = fcn2optimexpr(@expm,A*currentTR );
       % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
       expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
-      pyruvatematrix = diag(ones(Ntime,1)) + diag( - expATR(1,1)*  cos(FaList(1,1:(Ntime-1))),-1);
+      %pyruvatematrix = diag(ones(Ntime,1)) + diag( - expATR(1,1)*  cos(FaList(1,1:(Ntime-1))),-1);
       pyruvateRHS = rand(Ntime,1) ;
-      statevariable(1,:,iqp) = pyruvatematrix\pyruvateRHS ;
-      lactatematrix = diag(ones(Ntime,1)) + diag( - expATR(2,2)*  cos(FaList(2,1:(Ntime-1))),-1);
+      %statevariable(1,:,iqp) = pyruvatematrix \pyruvateRHS ;
+      for iii = 2:Ntime
+        statevariable(1,iii,iqp) = pyruvateRHS(iii)  + expATR(1,1)* cos(FaList(1,iii-1)) * statevariable(1,iii-1,iqp);
+      end 
+      %lactatematrix = diag(ones(Ntime,1)) + diag( - expATR(2,2)*  cos(FaList(2,1:(Ntime-1))),-1);
       lactateRHS = cos(FaList(2,:)).* statevariable(1,:,iqp);
-      statevariable(2,:,iqp) = lactatematrix \lactateRHS ;
+      %statevariable(2,:,iqp) = lactatematrix \lactateRHS ;
        
+      for iii = 2:Ntime
+        statevariable(2,iii,iqp) = lactateRHS(iii)  + expATR(2,2)* cos(FaList(2,iii-1)) * statevariable(2,iii-1,iqp);
+      end 
     end
 
     disp('build objective function')
