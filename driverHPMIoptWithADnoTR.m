@@ -167,17 +167,35 @@ if optf
       expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
       %pyruvatematrix = diag(ones(Ntime,1)) + diag( - expATR(1,1)*  cos(FaList(1,1:(Ntime-1))),-1);
       pyruvateRHS = rand(Ntime,1) ;
+      % >> Ntime = 5; syms a [1 Ntime-1] 
+      % >> lowermatrix = diag(ones(Ntime,1)) + diag( a,-1);
+      % >> inv(lowermatrix)
       %statevariable(1,:,iqp) = pyruvatematrix \pyruvateRHS ;
-      for iii = 2:Ntime
-        statevariable(1,iii,iqp) = pyruvateRHS(iii)  + expATR(1,1)* cos(FaList(1,iii-1)) * statevariable(1,iii-1,iqp);
-      end 
+      a1 = - expATR(1,1)*  cos(FaList(1,1));
+      a2 = - expATR(1,1)*  cos(FaList(1,2));
+      a3 = - expATR(1,1)*  cos(FaList(1,3));
+      a4 = - expATR(1,1)*  cos(FaList(1,4));
+      pyruvateinv    = [          1,         0,     0,   0, 0; ...
+                                -a1,         1,     0,   0, 0; ...
+                              a1*a2,       -a2,     1,   0, 0; ...
+                          -a1*a2*a3,     a2*a3,   -a3,   1, 0; ...
+                        a1*a2*a3*a4, -a2*a3*a4, a3*a4, -a4, 1];
+      statevariable(1,:,iqp) = pyruvateinv*pyruvateRHS ;
+
       %lactatematrix = diag(ones(Ntime,1)) + diag( - expATR(2,2)*  cos(FaList(2,1:(Ntime-1))),-1);
       lactateRHS = cos(FaList(2,:)).* statevariable(1,:,iqp);
       %statevariable(2,:,iqp) = lactatematrix \lactateRHS ;
        
-      for iii = 2:Ntime
-        statevariable(2,iii,iqp) = lactateRHS(iii)  + expATR(2,2)* cos(FaList(2,iii-1)) * statevariable(2,iii-1,iqp);
-      end 
+      b1 = - expATR(2,2)*  cos(FaList(2,1));
+      b2 = - expATR(2,2)*  cos(FaList(2,2));
+      b3 = - expATR(2,2)*  cos(FaList(2,3));
+      b4 = - expATR(2,2)*  cos(FaList(2,4));
+      lactateinv    = [          1,         0,     0,   0, 0; ...
+                                -b1,         1,     0,   0, 0; ...
+                              b1*b2,       -b2,     1,   0, 0; ...
+                          -b1*b2*b3,     b2*b3,   -b3,   1, 0; ...
+                        b1*b2*b3*b4, -b2*b3*b4, b3*b4, -b4, 1];
+      statevariable(2,:,iqp) = lactateinv * lactateRHS' ;
     end
 
     disp('build objective function')
