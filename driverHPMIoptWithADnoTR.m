@@ -139,52 +139,39 @@ if optf
 
     disp('build state variable')
     for iqp = 1:lqp
-      for iii = 1:Ntime-1
-        % disp([Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1 , Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2 ,Ntime* Nspecies* lqp])
-        T1Pqp = xn{1}(iqp);
-        T1Lqp = xn{2}(iqp);
-        kplqp = xn{3}(iqp);
-        klpqp =    0 ;     % @cmwalker where do I get this from ? 
-        kveqp = xn{4}(iqp);
-        %% A = [-1/T1Pqp - kplqp - kveqp,  klpqp; kplqp, -1/T1Lqp - klpqp];
-        %% [V,D] = eig(A);
-        %% expATR = V*[exp(D(1,1)*1.4) 0 ; 0 exp(D(2,2)*1.4)]*V^-1;
-        %% aifterm =  kveqp *(designvariable(3,iii+1)- designvariable(3,iii))* ( [jmA0 * (designvariable(3,iii+1)- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii+1)- jmt0 )/jmbeta);0] +  expATR * [jmA0 * (designvariable(3,iii  )- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii  )- jmt0 )/jmbeta);0])/2;
-        %% governeqns(Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1:Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2) = statevariable(:,iii+1,iqp ) -  expATR *statevariable(:,iii,iqp )   + aifterm       == 0;
-        currentTR = diffTR(iii);
-        nsubstep = 5;
-        deltat = currentTR /nsubstep ;
-        %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
-        % TODO - FIXME - more elegant way ?
-        integratedt = [TRList(iii)+deltat/2, TRList(iii)+3*deltat/2,TRList(iii)+5*deltat/2,TRList(iii)+7*deltat/2,TRList(iii)+9*deltat/2,TRList(iii)+11*deltat/2]  ;
-        integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-jmt0,jmalpha,jmbeta) ;
-        % >> syms a  kpl d currentTR    T1P kveqp T1L 
-        % >> expATR = expm([a,  0; kpl, d ] * currentTR )
-        % 
-        % expATR =
-        % 
-        % [                                     exp(a*currentTR),                0]
-        % [(kpl*exp(a*currentTR) - kpl*exp(currentTR*d))/(a - d), exp(currentTR*d)]
-        % 
-        % >> a = -1/T1P - kpl - kveqp
-        % >> d = -1/T1L
-        % >> eval(expATR)
-        % 
-        % ans =
-        % 
-        % [                                                              exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0]
-        % [(kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)]
-        %    
-        %expATR = fcn2optimexpr(@expm,A*currentTR );
-        % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
-        expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
-        % mid-point rule integration
-        aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
-    (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ;
-        statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp ))   + aifterm ;
-        %statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp )) ;
-        statevariable(:,iii+1,iqp) =  cos(FaList(:,iii+1)).* statevariable(:,iii+1,iqp);
-      end
+      T1Pqp = xn{1}(iqp);
+      T1Lqp = xn{2}(iqp);
+      kplqp = xn{3}(iqp);
+      klpqp =    0 ;     % @cmwalker where do I get this from ? 
+      kveqp = xn{4}(iqp);
+      currentTR = 2;
+      % >> syms a  kpl d currentTR    T1P kveqp T1L 
+      % >> expATR = expm([a,  0; kpl, d ] * currentTR )
+      % 
+      % expATR =
+      % 
+      % [                                     exp(a*currentTR),                0]
+      % [(kpl*exp(a*currentTR) - kpl*exp(currentTR*d))/(a - d), exp(currentTR*d)]
+      % 
+      % >> a = -1/T1P - kpl - kveqp
+      % >> d = -1/T1L
+      % >> eval(expATR)
+      % 
+      % ans =
+      % 
+      % [                                                              exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0]
+      % [(kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)]
+      %    
+      %expATR = fcn2optimexpr(@expm,A*currentTR );
+      % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
+      expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
+      pyruvatematrix = diag(ones(Ntime,1)) + diag( - expATR(1,1)*  cos(FaList(1,1:(Ntime-1))),-1);
+      pyruvateRHS = rand(Ntime,1) ;
+      statevariable(1,:,iqp) = pyruvatematrix\pyruvateRHS ;
+      lactatematrix = diag(ones(Ntime,1)) + diag( - expATR(2,2)*  cos(FaList(2,1:(Ntime-1))),-1);
+      lactateRHS = cos(FaList(2,:)).* statevariable(1,:,iqp);
+      statevariable(2,:,iqp) = lactatematrix \lactateRHS ;
+       
     end
 
     disp('build objective function')
