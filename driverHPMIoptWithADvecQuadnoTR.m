@@ -134,8 +134,8 @@ if optf
     FaList = optimvar('FaList',2,Ntime);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss  = 2
-    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:13)],[tisinput(2:2:end)]);
+    NGauss  = 5
+    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
     lqp=length(xn{1}(:));
     statevariable    = optimvar('state',Ntime,Nspecies,lqp);
     stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
@@ -147,14 +147,16 @@ if optf
     
 
     disp('build state variable')
-    T1Pqp   = xn{1}(:);
-    T1Lqp   = xn{2}(:);
-    kplqp   = xn{3}(:);
+    %T1Pqp   = xn{1}(:);
+    %T1Lqp   = xn{2}(:);
+    T1Pqp   = T1pmean;
+    T1Lqp   = T1lmean;
+    kplqp   = xn{1}(:);
     klpqp   =    0 ;     % @cmwalker where do I get this from ? 
-    kveqp   = xn{4}(:);
-    t0qp    = xn{5}(:); 
-    alphaqp = xn{6}(:); 
-    betaqp  = xn{7}(:); 
+    kveqp   = xn{2}(:);
+    t0qp    = xn{3}(:); 
+    %alphaqp = xn{6}(:); 
+    %betaqp  = xn{7}(:); 
     
     currentTR = 2;
     % >> syms a  kpl d currentTR    T1P kveqp T1L 
@@ -198,27 +200,21 @@ if optf
     disp('build objective function')
     sumstatevariable = squeeze(sum(statevariable,1));
     %statematrix = optimexpr([lqp,lqp]);
+    %lqpchoosetwo = nchoosek(1:lqp,2);
+    %arraypermutationsjjj = repmat([1:lqp]',1,lqp) ;
+    %arraypermutationsiii = repmat([1:lqp] ,lqp,1) ;
+    %lqpchoosetwo = [arraypermutationsiii(:), arraypermutationsjjj(:)];
+    %diffsummone = sumstatevariable(1,lqpchoosetwo(:,1)) - sumstatevariable(1,lqpchoosetwo(:,2));
+    %diffsummtwo = sumstatevariable(2,lqpchoosetwo(:,1)) - sumstatevariable(2,lqpchoosetwo(:,2));
     diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
     diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
+
     Hz = 0;
     for jjj=1:lqp2
       znu=xn2{1}(jjj) ;
+      %Hz = Hz + wn2(jjj) * (wn(lqpchoosetwo(:,1))' * log(exp(-(znu + diffsummone').^2/sqrt(2)/signu   - (znu + diffsummtwo').^2/sqrt(2)/signu  ).* wn(lqpchoosetwo(:,2))));
       Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/sqrt(2)/signu   - (znu + diffsummtwo).^2/sqrt(2)/signu  ) * wn(:)));
     end
-    %% Hz = 0;
-    %% for iii=1:lqp
-    %%     for jjj=1:lqp2
-    %%         znu=xn2{1}(jjj) ;
-    %%         lntermtmp=0;
-    %%         for kkk=1:lqp
-    %%             lntermtmp=lntermtmp + wn(kkk) * exp(-(znu+sum(statevariable(1,:,iii))- sum(statevariable(1,:,kkk)))^2/sqrt(2)/signu);
-    %%             lntermtmp=lntermtmp + wn(kkk) * exp(-(znu+sum(statevariable(2,:,iii))- sum(statevariable(2,:,kkk)))^2/sqrt(2)/signu);
-    %%         end
-    %%         % for function
-    %%         lnterm = log(lntermtmp)+log(pi^(-1.5));
-    %%         Hz = Hz + wn(iii) * wn2(jjj) * lnterm;
-    %%     end
-    %% end
     MIGaussObj = -pi^(-1.5-2.5)*Hz; 
 
     %% 
@@ -236,8 +232,13 @@ if optf
     
     x0.FaList = params.FaList;
     x0.state  = zeros(Ntime,Nspecies,lqp);
-    myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
-    [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true)
+    [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
+    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
+
+    %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative','finite-differences','ObjectiveDerivative', 'finite-differences' )
+    %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative','auto-reverse','ObjectiveDerivative', 'finite-differences' )
+
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
 

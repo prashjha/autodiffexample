@@ -134,8 +134,9 @@ if optf
     FaList = optimvar('FaList',2,Ntime);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss  = 2
-    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:13)],[tisinput(2:2:end)]);
+    NGauss  = 4
+    % 7 variables too many
+    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:9)],[tisinput(2:2:10)]);
     lqp=length(xn{1}(:));
     statepyruvate    = optimvar('statepyruvate',Ntime,lqp);
     statelactate     = optimvar('statelactate' ,Ntime,lqp);
@@ -154,8 +155,8 @@ if optf
     klpqp   =    0 ;     % @cmwalker where do I get this from ? 
     kveqp   = xn{4}(:);
     t0qp    = xn{5}(:); 
-    alphaqp = xn{6}(:); 
-    betaqp  = xn{7}(:); 
+    %alphaqp = xn{6}(:); 
+    %betaqp  = xn{7}(:); 
     
     currentTR = 2;
     % >> syms a  kpl d currentTR    T1P kveqp T1L 
