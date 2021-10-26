@@ -40,7 +40,14 @@ kplmean = [ 5 ];       % s
 kplstdd = [ 5 ];       % s
 kvemean = [ 0.15 ];       % s
 kvestdd = [ .05  ];       % s
-tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd];
+t0mean  = [ 4    ];       % s
+t0sttd  = [ 1    ] ;       % s
+alphamean  =  [2.5];
+alphasttd  =  [.3];
+betamean  =  [4.5];
+betasttd  =  [.3];
+tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
+
 
 %% Get true Mz
 %% Choose Excitation Angle
@@ -128,9 +135,10 @@ if optf
     TRList = TR_list;
     diffTR = diff(TRList);
     NGauss  = 2
-    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:13)],[tisinput(2:2:end)]);
     lqp=length(xn{1}(:));
-    statevariable  = optimexpr([Nspecies,Ntime,lqp]);
+    statevariable    = optimvar('state',Ntime,Nspecies,lqp);
+    stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
@@ -139,11 +147,14 @@ if optf
     
 
     disp('build state variable')
-    T1Pqp = xn{1}(:);
-    T1Lqp = xn{2}(:);
-    kplqp = xn{3}(:);
-    klpqp =    0 ;     % @cmwalker where do I get this from ? 
-    kveqp = xn{4}(:);
+    T1Pqp   = xn{1}(:);
+    T1Lqp   = xn{2}(:);
+    kplqp   = xn{3}(:);
+    klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+    kveqp   = xn{4}(:);
+    t0qp    = xn{5}(:); 
+    alphaqp = xn{6}(:); 
+    betaqp  = xn{7}(:); 
     
     currentTR = 2;
     % >> syms a  kpl d currentTR    T1P kveqp T1L 
@@ -165,8 +176,8 @@ if optf
     %    
     %expATR = fcn2optimexpr(@expm,A*currentTR );
     % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
-    expATRoneone = exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)))
-    expATRtwoone = (kplqp.*exp(-currentTR*T1Lqp.^(-1)) - kplqp.*exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)))).* (kplqp + kveqp - T1Lqp.^(-1) + T1Pqp.^(-1)).^(-1)
+    expATRoneone = exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)));
+    expATRtwoone = (kplqp.*exp(-currentTR*T1Lqp.^(-1)) - kplqp.*exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)))).* (kplqp + kveqp - T1Lqp.^(-1) + T1Pqp.^(-1)).^(-1);
     expATRtwotwo = exp(-currentTR * T1Lqp.^(-1));
      
     aifplaceholder =     rand(lqp,1);
@@ -180,12 +191,12 @@ if optf
         %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-jmt0,jmalpha,jmbeta) ;
         %aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ); (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ; 
         aifterm = aifplaceholder ;
-        statevariable(1,iii+1,:) =  cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(1,iii,: ) )  + aifterm ;
-        statevariable(2,iii+1,:) =  cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(2,iii,: ) )  +  cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(1,iii,: )  ) ; 
+        stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) -  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) == reshape(aifplaceholder,1,1,lqp) ;
+        stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) -  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) == reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
     end
 
     disp('build objective function')
-    sumstatevariable = squeeze(sum(statevariable,2));
+    sumstatevariable = squeeze(sum(statevariable,1));
     %statematrix = optimexpr([lqp,lqp]);
     diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
     diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
@@ -214,7 +225,7 @@ if optf
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
-    convprob = optimproblem('Objective',MIGaussObj );
+    convprob = optimproblem('Objective',MIGaussObj , "Constraints",stateconstraint);
     %% 
     % View the new problem.
     
@@ -224,6 +235,7 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
+    x0.state  = zeros(Ntime,Nspecies,lqp);
     myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
     %[popt,fval,exitflag,output] = solve(convprob,x0 )

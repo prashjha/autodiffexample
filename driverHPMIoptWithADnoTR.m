@@ -40,7 +40,9 @@ kplmean = [ 5 ];       % s
 kplstdd = [ 5 ];       % s
 kvemean = [ 0.15 ];       % s
 kvestdd = [ .05  ];       % s
-tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd];
+t0mean  = [ 4    ];       % s
+t0sttd  = [ 1    ] ;       % s
+tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd,t0mean,t0sttd];
 
 %% Get true Mz
 %% Choose Excitation Angle
