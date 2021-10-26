@@ -134,7 +134,7 @@ if optf
     FaList = optimvar('FaList',2,Ntime);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss  = 5
+    NGauss  = 3
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
     lqp=length(xn{1}(:));
     statevariable    = optimvar('state',Ntime,Nspecies,lqp);
@@ -189,8 +189,10 @@ if optf
         deltat = currentTR /nsubstep ;
         %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
         % TODO - FIXME - more elegant way ?
-        %integratedt = [TRList(iii)+deltat/2, TRList(iii)+3*deltat/2,TRList(iii)+5*deltat/2,TRList(iii)+7*deltat/2,TRList(iii)+9*deltat/2,TRList(iii)+11*deltat/2]  ;
-        %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-jmt0,jmalpha,jmbeta) ;
+        integratedt = [1:2:2*nsubstep+1]*deltat/2;
+        
+        %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
+        integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
         %aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ); (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ; 
         aifterm = aifplaceholder ;
         stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) -  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) == reshape(aifplaceholder,1,1,lqp) ;
