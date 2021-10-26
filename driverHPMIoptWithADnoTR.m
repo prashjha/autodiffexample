@@ -8,7 +8,7 @@ close all
 clc
 N_vect = round(linspace(5,60,15));
 %% Variable Setup
-Ntime = 5;
+Ntime = 23;
 TR = 2;
 TR_list = (0:(Ntime-1))*TR;
 T1a = 43;
@@ -130,7 +130,8 @@ if optf
     NGauss  = 2
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     lqp=length(xn{1}(:));
-    statevariable  = optimexpr([Nspecies,Ntime,lqp]);
+    statevariable    = optimvar('state',Ntime,Nspecies,lqp);
+    stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
@@ -138,6 +139,7 @@ if optf
 
 
     disp('build state variable')
+    pyruvateRHS = rand(Ntime,1) ;
     for iqp = 1:lqp
       T1Pqp = xn{1}(iqp);
       T1Lqp = xn{2}(iqp);
@@ -165,41 +167,20 @@ if optf
       %expATR = fcn2optimexpr(@expm,A*currentTR );
       % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
       expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
-      %pyruvatematrix = diag(ones(Ntime,1)) + diag( - expATR(1,1)*  cos(FaList(1,1:(Ntime-1))),-1);
-      pyruvateRHS = rand(Ntime,1) ;
+      pyruvatematrix = diag(ones(Ntime,1)) + diag( - expATR(1,1)*  cos(FaList(1,1:(Ntime-1))),-1);
       % >> Ntime = 5; syms a [1 Ntime-1] 
       % >> lowermatrix = diag(ones(Ntime,1)) + diag( a,-1);
       % >> inv(lowermatrix)
-      %statevariable(1,:,iqp) = pyruvatematrix \pyruvateRHS ;
-      a1 = - expATR(1,1)*  cos(FaList(1,1));
-      a2 = - expATR(1,1)*  cos(FaList(1,2));
-      a3 = - expATR(1,1)*  cos(FaList(1,3));
-      a4 = - expATR(1,1)*  cos(FaList(1,4));
-      pyruvateinv    = [          1,         0,     0,   0, 0; ...
-                                -a1,         1,     0,   0, 0; ...
-                              a1*a2,       -a2,     1,   0, 0; ...
-                          -a1*a2*a3,     a2*a3,   -a3,   1, 0; ...
-                        a1*a2*a3*a4, -a2*a3*a4, a3*a4, -a4, 1];
-      statevariable(1,:,iqp) = pyruvateinv*pyruvateRHS ;
+      stateconstraint(:,1,iqp)  = pyruvatematrix * statevariable(:,1,iqp) == pyruvateRHS ;
 
-      %lactatematrix = diag(ones(Ntime,1)) + diag( - expATR(2,2)*  cos(FaList(2,1:(Ntime-1))),-1);
-      lactateRHS = cos(FaList(2,:)).* statevariable(1,:,iqp);
-      %statevariable(2,:,iqp) = lactatematrix \lactateRHS ;
+      lactatematrix = diag(ones(Ntime,1)) + diag( - expATR(2,2)*  cos(FaList(2,1:(Ntime-1))),-1);
+      lactateRHS = cos(FaList(2,:))'.* statevariable(:,1,iqp);
+      stateconstraint(:,2,iqp)  = lactatematrix *statevariable(:,2,iqp) == lactateRHS ;
        
-      b1 = - expATR(2,2)*  cos(FaList(2,1));
-      b2 = - expATR(2,2)*  cos(FaList(2,2));
-      b3 = - expATR(2,2)*  cos(FaList(2,3));
-      b4 = - expATR(2,2)*  cos(FaList(2,4));
-      lactateinv    = [          1,         0,     0,   0, 0; ...
-                                -b1,         1,     0,   0, 0; ...
-                              b1*b2,       -b2,     1,   0, 0; ...
-                          -b1*b2*b3,     b2*b3,   -b3,   1, 0; ...
-                        b1*b2*b3*b4, -b2*b3*b4, b3*b4, -b4, 1];
-      statevariable(2,:,iqp) = lactateinv * lactateRHS' ;
     end
 
     disp('build objective function')
-    sumstatevariable = squeeze(sum(statevariable,2));
+    sumstatevariable = squeeze(sum(statevariable,1));
     %statematrix = optimexpr([lqp,lqp]);
     diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
     diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
@@ -228,7 +209,7 @@ if optf
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
-    convprob = optimproblem('Objective',MIGaussObj );
+    convprob = optimproblem('Objective',MIGaussObj, "Constraints",stateconstraint);
     %% 
     % View the new problem.
     
@@ -238,6 +219,7 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
+    x0.state  = zeros(Nspecies,Ntime,lqp);
     myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
