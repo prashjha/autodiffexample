@@ -138,15 +138,20 @@ if optf
     lqp2=length(xn2{1}(:));
 
 
+    % integration points
+    currentTR = 2;
+    nsubstep = 5;
+    deltat = currentTR /nsubstep ;
+    integratedt  =[TRList(1):deltat:TRList(Ntime)] + deltat /2;
+
     disp('build state variable')
-    pyruvateRHS = rand(Ntime,1) ;
     for iqp = 1:lqp
       T1Pqp = xn{1}(iqp);
       T1Lqp = xn{2}(iqp);
       kplqp = xn{3}(iqp);
       klpqp =    0 ;     % @cmwalker where do I get this from ? 
       kveqp = xn{4}(iqp);
-      currentTR = 2;
+
       % >> syms a  kpl d currentTR    T1P kveqp T1L 
       % >> expATR = expm([a,  0; kpl, d ] * currentTR )
       % 
@@ -171,11 +176,16 @@ if optf
       % >> Ntime = 5; syms a [1 Ntime-1] 
       % >> lowermatrix = diag(ones(Ntime,1)) + diag( a,-1);
       % >> inv(lowermatrix)
-      stateconstraint(:,1,iqp)  = pyruvatematrix * statevariable(:,1,iqp) == pyruvateRHS ;
+      integrand = jmA0 * my_gampdf(integratedt(1:(Ntime-1)*nsubstep )'-jmt0,jmalpha,jmbeta) ;
+      aifhelp = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*repmat([.5:1:nsubstep],1,Ntime-1) );
+                            (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*repmat([.5:1:nsubstep],1,Ntime-1) ) - kplqp*exp(-1/T1Lqp *deltat*repmat([.5:1:nsubstep],1,Ntime-1) ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] ;
+      aifintegrate = cumsum( [aifhelp(1,:)'.*integrand , aifhelp(2,:)'.*integrand ],2);
+      aifterm      = [0, 0;aifintegrate(1:nsubstep:end,:) ];
+      stateconstraint(:,1,iqp)  = pyruvatematrix * statevariable(:,1,iqp) == aifterm(:,1) ;
 
       lactatematrix = diag(ones(Ntime,1)) + diag( - expATR(2,2)*  cos(FaList(2,1:(Ntime-1))),-1);
       lactateRHS = cos(FaList(2,:))'.* statevariable(:,1,iqp);
-      stateconstraint(:,2,iqp)  = lactatematrix *statevariable(:,2,iqp) == lactateRHS ;
+      stateconstraint(:,2,iqp)  = lactatematrix *statevariable(:,2,iqp) == aifterm(:,2)+lactateRHS ;
        
     end
 
