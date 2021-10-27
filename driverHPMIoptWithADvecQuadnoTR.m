@@ -189,7 +189,7 @@ if optf
         deltat = currentTR /nsubstep ;
         %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
         % TODO - FIXME - more elegant way ?
-        integratedt = [1:2:2*nsubstep+1]*deltat/2;
+        integratedt =TRList(iii)+ [1:2:2*nsubstep+1]*deltat/2;
         
         %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
         integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
