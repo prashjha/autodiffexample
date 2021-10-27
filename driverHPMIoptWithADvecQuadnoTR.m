@@ -6,7 +6,6 @@
 clear all
 close all
 clc
-N_vect = round(linspace(5,60,15));
 %% Variable Setup
 Ntime = 23;
 TR = 2;
@@ -100,7 +99,7 @@ if plotinit
     jmbeta  = 4.5
     jmt0    = 0
     jmaif   = jmA0  * gampdf(TR_list - jmt0  , jmalpha , jmbeta);
-    figure(20)
+    figure(4)
     plot(TR_list,jmaif ,'b')
     ylabel('aif')
     xlabel('sec')
@@ -131,7 +130,7 @@ if optf
 
     % setup optimization variables
     Nspecies = 2
-    FaList = optimvar('FaList',2,Ntime);
+    FaList = optimvar('FaList',Nspecies,Ntime);
     TRList = TR_list;
     diffTR = diff(TRList);
     NGauss  = 3
@@ -199,7 +198,9 @@ if optf
     end
 
     disp('build objective function')
-    sumstatevariable = squeeze(sum(statevariable,1));
+    % TODO - repmat does not work well with AD
+    % TODO - replace repmat with matrix
+    sumstatevariable = squeeze(sum(repmat(FaList',1,1,lqp).*statevariable,1));
     %statematrix = optimexpr([lqp,lqp]);
     %lqpchoosetwo = nchoosek(1:lqp,2);
     %arraypermutationsjjj = repmat([1:lqp]',1,lqp) ;
@@ -235,8 +236,8 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.state  = zeros(Ntime,Nspecies,lqp);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true)
+    x0.state  = repmat(Mz',1,1,lqp);
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e1)
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
 
@@ -250,11 +251,11 @@ if optf
 
     params.FaList = popt.FaList;
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    figure(4)
+    figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
     xlabel('sec')
-    figure(5)
+    figure(11)
     plot(params.TRList,params.FaList(1,:),'b',params.TRList,params.FaList(2,:),'k')
     ylabel('MI FA')
     xlabel('sec')
