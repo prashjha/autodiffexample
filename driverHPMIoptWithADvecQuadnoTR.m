@@ -6,39 +6,16 @@
 clear all
 close all
 clc
-%% Variable Setup
-Ntime = 23;
-TR = 2;
-TR_list = (0:(Ntime-1))*TR;
-T1a = 43;
-T1b = 33;
-Kpl = 0.1;
-alpha = 2.5;
-beta = 4.5;
-M0 = [0,0];
-kve = 0.02;
-ve = 0.95;
-VIF_scale_fact = [1;0];
-bb_flip_angle = 20;
-opts = optimset('lsqcurvefit');
-opts.TolFun = 1e-09;
-opts.TolX = 1e-09;
-opts.Display = 'off';
-params = struct('t0',[0;0],'gammaPdfA',[alpha;1],'gammaPdfB',[beta;1],...
-    'scaleFactor',VIF_scale_fact,'T1s',[T1a,T1b],'ExchangeTerms',[0,Kpl;0,0],...
-    'TRList',TR_list,'PerfusionTerms',[kve,0],'volumeFractions',ve,...
-    'fitOptions', opts);
-model = HPKinetics.NewMultiPoolTofftsGammaVIF();
 
 %% Tissue Parameters
 T1pmean = [ 30 ]; % s
 T1pstdd = [ 10 ]; % s
 T1lmean = [ 25 ]; % s
 T1lstdd = [ 10 ]; % s
-kplmean = [ 5 ];       % s
-kplstdd = [ 5 ];       % s
-kvemean = [ 0.15 ];       % s
-kvestdd = [ .05  ];       % s
+kplmean = [ .15 ];       % s
+kplstdd = [ .03 ];       % s
+kvemean = [ 0.05 ];       % s
+kvestdd = [ .01  ];       % s
 t0mean  = [ 4    ];       % s
 t0sttd  = [ 1    ] ;       % s
 alphamean  =  [2.5];
@@ -46,6 +23,25 @@ alphasttd  =  [.3];
 betamean  =  [4.5];
 betasttd  =  [.3];
 tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
+
+%% Variable Setup
+Ntime = 23;
+TR = 2;
+TR_list = (0:(Ntime-1))*TR;
+M0 = [0,0];
+%ve = 0.95;
+ve = 1.;
+VIF_scale_fact = [1;0];
+bb_flip_angle = 20;
+opts = optimset('lsqcurvefit');
+opts.TolFun = 1e-09;
+opts.TolX = 1e-09;
+opts.Display = 'off';
+params = struct('t0',[t0mean(1);0],'gammaPdfA',[alphamean  ;1],'gammaPdfB',[betamean;1],...
+    'scaleFactor',VIF_scale_fact,'T1s',[T1pmean(1),T1lmean(1)],'ExchangeTerms',[0,kplmean(1) ;0,0],...
+    'TRList',TR_list,'PerfusionTerms',[kvemean(1),0],'volumeFractions',ve,...
+    'fitOptions', opts);
+model = HPKinetics.NewMultiPoolTofftsGammaVIF();
 
 
 %% Get true Mz
@@ -56,8 +52,8 @@ for i = 1:numel(FAType)
     switch (FAType{i})
         case('Const') % Nagashima for lactate const 10 pyruvate
             tic
-            E1(1) = exp(-TR*(1/T1a+Kpl));
-            E1(2) = exp(-TR/T1b);
+            E1(1) = exp(-TR*(1/T1pmean+kplmean));
+            E1(2) = exp(-TR/T1lmean);
             for n = 1:Ntime
                 %flips(2,n) = acos(sqrt((E1(2)^2-E1(2)^(2*(N-n+1)))/(1-E1(2)^(2*(N-n+1)))));
                 flips(2,n) = 15*pi/180;
@@ -130,13 +126,13 @@ if optf
 
     % setup optimization variables
     Nspecies = 2
-    FaList = optimvar('FaList',Nspecies,Ntime);
+    FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0);
     TRList = TR_list;
     diffTR = diff(TRList);
     NGauss  = 3
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
     lqp=length(xn{1}(:));
-    statevariable    = optimvar('state',Ntime,Nspecies,lqp);
+    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
     stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     signu = 10 ; % TODO - FIXME
@@ -237,7 +233,7 @@ if optf
     
     x0.FaList = params.FaList;
     x0.state  = repmat(Mz',1,1,lqp);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e1)
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
 
@@ -258,6 +254,15 @@ if optf
     figure(11)
     plot(params.TRList,params.FaList(1,:),'b',params.TRList,params.FaList(2,:),'k')
     ylabel('MI FA')
+    xlabel('sec')
+    figure(12)
+    plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
+    hold
+    plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
+    plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
+    plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
+    plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
+    ylabel('MI Mz ')
     xlabel('sec')
 end 
 
