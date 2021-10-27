@@ -182,7 +182,6 @@ if optf
     expATRtwoone = (kplqp.*exp(-currentTR*T1Lqp.^(-1)) - kplqp.*exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)))).* (kplqp + kveqp - T1Lqp.^(-1) + T1Pqp.^(-1)).^(-1);
     expATRtwotwo = exp(-currentTR * T1Lqp.^(-1));
      
-    aifplaceholder =     rand(lqp,1);
     for iii = 1:Ntime-1
         currentTR = diffTR(iii);
         nsubstep = 5;
@@ -193,10 +192,11 @@ if optf
         
         %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
         integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
-        %aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ); (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ; 
-        aifterm = aifplaceholder ;
-        stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) -  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) == reshape(aifplaceholder,1,1,lqp) ;
-        stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) -  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) == reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
+        aiftermpyr = deltat * kveqp.*  [ exp(- T1Pqp.^(-1) - kplqp - kveqp)*deltat*[.5:1:nsubstep]  ].* integrand ; 
+        aiftermlac = deltat * kveqp.*  ([ (kplqp.*exp((-1/T1Pqp - kplqp - kveqp) ) - kplqp.*exp(-1/T1Lqp )).* ((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp ).^(-1)] *deltat*[.5:1:nsubstep]  )   .* integrand ; 
+
+        stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) -  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) == reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
+        stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) -  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) == reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
     end
 
     disp('build objective function')
@@ -208,8 +208,11 @@ if optf
     %lqpchoosetwo = [arraypermutationsiii(:), arraypermutationsjjj(:)];
     %diffsummone = sumstatevariable(1,lqpchoosetwo(:,1)) - sumstatevariable(1,lqpchoosetwo(:,2));
     %diffsummtwo = sumstatevariable(2,lqpchoosetwo(:,1)) - sumstatevariable(2,lqpchoosetwo(:,2));
-    diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
-    diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
+    %diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
+    %diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
+    expandvar  = ones(1,lqp);
+    diffsummone = sumstatevariable(1,:)' * expandvar   - expandvar' * sumstatevariable(1,:);
+    diffsummtwo = sumstatevariable(2,:)' * expandvar   - expandvar' * sumstatevariable(2,:);
 
     Hz = 0;
     for jjj=1:lqp2
