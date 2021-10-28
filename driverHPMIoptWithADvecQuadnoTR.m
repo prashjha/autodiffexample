@@ -219,10 +219,10 @@ if optf
     disp('build objective function')
     % TODO - repmat does not work well with AD
     % TODO - replace repmat with matrix
-    % sumstatevariable = squeeze(sum(repmat(FaList',1,1,lqp).*statevariable,1));
+    % sumstatevariable = squeeze(sum(repmat(sin(FaList)',1,1,lqp).*statevariable,1));
     sumstatevariable = optimexpr([Nspecies,lqp]);
     for jjj = 1:lqp
-       sumstatevariable(:,jjj) =  sum(FaList' .*statevariable(:,:,jjj),1)';
+       sumstatevariable(:,jjj) =  sum(sin(FaList)' .*statevariable(:,:,jjj),1)';
     end 
     %statematrix = optimexpr([lqp,lqp]);
     %lqpchoosetwo = nchoosek(1:lqp,2);
