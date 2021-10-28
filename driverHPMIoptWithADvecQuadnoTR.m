@@ -130,28 +130,51 @@ if optf
     TRList = TR_list;
     diffTR = diff(TRList);
     NGauss  = 3
-    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
-    lqp=length(xn{1}(:));
-    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
-    stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
+
+    NumberUncertain = 3
+    switch (NumberUncertain)
+       case(3)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+         T1Pqp   = T1pmean;
+         T1Lqp   = T1lmean;
+         kplqp   = xn{1}(:);
+         klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+         kveqp   = xn{2}(:);
+         t0qp    = xn{3}(:); 
+       case(4)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+         T1Pqp   = xn{1}(:);
+         T1Lqp   = xn{2}(:);
+         kplqp   = xn{3}(:);
+         klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+         kveqp   = xn{4}(:);
+         t0qp    = t0mean(1); 
+       case(5)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:9)],[tisinput(2:2:10)]);
+         T1Pqp   = xn{1}(:);
+         T1Lqp   = xn{2}(:);
+         kplqp   = xn{3}(:);
+         klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+         kveqp   = xn{4}(:);
+         t0qp    = xn{5}(:); 
+    end
+    %alphaqp = xn{6}(:); 
+    %betaqp  = xn{7}(:); 
+
+    lqp=length(xn{1}(:));
+    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+    stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     
 
     disp('build state variable')
     %T1Pqp   = xn{1}(:);
     %T1Lqp   = xn{2}(:);
-    T1Pqp   = T1pmean;
-    T1Lqp   = T1lmean;
-    kplqp   = xn{1}(:);
-    klpqp   =    0 ;     % @cmwalker where do I get this from ? 
-    kveqp   = xn{2}(:);
-    t0qp    = xn{3}(:); 
-    %alphaqp = xn{6}(:); 
-    %betaqp  = xn{7}(:); 
+    
     
     currentTR = 2;
     % >> syms a  kpl d currentTR    T1P kveqp T1L 
@@ -196,7 +219,11 @@ if optf
     disp('build objective function')
     % TODO - repmat does not work well with AD
     % TODO - replace repmat with matrix
-    sumstatevariable = squeeze(sum(repmat(FaList',1,1,lqp).*statevariable,1));
+    % sumstatevariable = squeeze(sum(repmat(FaList',1,1,lqp).*statevariable,1));
+    sumstatevariable = optimexpr([Nspecies,lqp]);
+    for jjj = 1:lqp
+       sumstatevariable(:,jjj) =  sum(FaList' .*statevariable(:,:,jjj),1)';
+    end 
     %statematrix = optimexpr([lqp,lqp]);
     %lqpchoosetwo = nchoosek(1:lqp,2);
     %arraypermutationsjjj = repmat([1:lqp]',1,lqp) ;
