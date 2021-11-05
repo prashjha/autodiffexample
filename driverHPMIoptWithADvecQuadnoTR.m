@@ -145,7 +145,8 @@ if optf
     %betaqp  = xn{7}(:); 
 
     lqp=length(xn{1}(:));
-    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
+    %statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
+    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
     stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     disp('build state variable')
@@ -174,6 +175,9 @@ if optf
     expATRtwoone = (kplqp.*exp(-currentTR*T1Lqp.^(-1)) - kplqp.*exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)))).* (kplqp + kveqp - T1Lqp.^(-1) + T1Pqp.^(-1)).^(-1);
     expATRtwotwo = exp(-currentTR * T1Lqp.^(-1));
      
+    % IC
+    stateconstraint(1,1,:)  = statevariable(1,1,:) ==0;
+    stateconstraint(1,2,:)  = statevariable(1,2,:) ==0;
     for iii = 1:Ntime-1
         currentTR = diffTR(iii);
         nsubstep = 5;
