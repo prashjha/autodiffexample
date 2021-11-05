@@ -17,7 +17,7 @@ kplstdd = [ .03 ];       % s
 kvemean = [ 0.05 ];       % s
 kvestdd = [ .01  ];       % s
 t0mean  = [ 4    ];       % s
-t0sttd  = [ 1    ] ;       % s
+t0sttd  = [ 1.3  ] ;       % s
 alphamean  =  [2.5];
 alphasttd  =  [.3];
 betamean  =  [4.5];
@@ -108,13 +108,13 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss  = 3
+    NGauss = 3
 
     signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
-    NumberUncertain = 3
+    NumberUncertain = 4
     switch (NumberUncertain)
        case(3)
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
@@ -176,8 +176,7 @@ if optf
     expATRtwotwo = exp(-currentTR * T1Lqp.^(-1));
      
     % IC
-    stateconstraint(1,1,:)  = statevariable(1,1,:) ==0;
-    stateconstraint(1,2,:)  = statevariable(1,2,:) ==0;
+    stateconstraint(1,:,:)  = statevariable(1,:,:) ==0;
     for iii = 1:Ntime-1
         currentTR = diffTR(iii);
         nsubstep = 5;
