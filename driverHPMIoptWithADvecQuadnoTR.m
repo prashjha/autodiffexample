@@ -37,7 +37,7 @@ opts = optimset('lsqcurvefit');
 opts.TolFun = 1e-09;
 opts.TolX = 1e-09;
 opts.Display = 'off';
-params = struct('t0',[t0mean(1);0],'gammaPdfA',[alphamean  ;1],'gammaPdfB',[betamean;1],...
+params = struct('t0',[t0mean(1);0],'gammaPdfA',[alphamean(1)  ;1],'gammaPdfB',[betamean(1);1],...
     'scaleFactor',VIF_scale_fact,'T1s',[T1pmean(1),T1lmean(1)],'ExchangeTerms',[0,kplmean(1) ;0,0],...
     'TRList',TR_list,'PerfusionTerms',[kvemean(1),0],'volumeFractions',ve,...
     'fitOptions', opts);
@@ -65,10 +65,6 @@ for i = 1:numel(FAType)
     %% Fitting
     [t_axis,Mxy,Mz] = model.compile(M0.',params);
     toc
-    save_Mxy{i} = Mxy;
-    save_Mz{i} = Mz;
-    save_t_axis{i} = t_axis;
-    save_flip_angles{i} = params.FaList;
 end
 
 %% Plot initial guess
@@ -80,8 +76,8 @@ if plotinit
     ylabel('Const Mxy')
     xlabel('sec')
     figure(2)
-    plot(TR_list,flips(1,:),'b',TR_list,flips(2,:),'k')
-    ylabel('Const FA')
+    plot(TR_list,flips(1,:)*180/pi,'b',TR_list,flips(2,:)*180/pi,'k')
+    ylabel('Const FA (deg) ')
     xlabel('sec')
     % save('tmpShowMxyPub')
     figure(3)
@@ -90,10 +86,10 @@ if plotinit
     xlabel('sec')
 
     % plot gamma
-    jmA0    = 10.
-    jmalpha = 2.5
-    jmbeta  = 4.5
-    jmt0    = 0
+    jmA0    = VIF_scale_fact(1);
+    jmalpha = alphamean(1);
+    jmbeta  = betamean(1);
+    jmt0    = t0mean(1);
     jmaif   = jmA0  * gampdf(TR_list - jmt0  , jmalpha , jmbeta);
     figure(4)
     plot(TR_list,jmaif ,'b')
@@ -102,31 +98,14 @@ if plotinit
 end
 
 
-%% compute TR's from TR_list
-TRi = getTR(TR_list); % vector of 'size(TR_list) - 1'
-
 %% optimize MI for TR and FA
 optf = true;
 if optf
-    % Pulse Sequence Bounds
-    pmin =  [TRi'-1.5; flips(:)*0];     % <-- constraints on TR's and not TR_list
-    pmax =  [TRi'+1.5; flips(:)*0+pi/2];% <-- constraints on TR's and not TR_list
-    findiffrelstep=1.e-6;
-    tolx=1.e-9;%1.e-5;
-    tolfun=1.e-9;%1.e-5;QALAS_synphan_MIcalc.m
-    maxiter=500;
 
     tic;
-    % Convert this function file to an optimization expression.
-    
-    %% 
-    % Furthermore, you can also convert the |rosenbrock| function handle, which 
-    % was defined at the beginning of the plotting routine, into an optimization expression.
-    
-
     % setup optimization variables
     Nspecies = 2
-    FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0);
+    FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
     NGauss  = 3
@@ -166,15 +145,10 @@ if optf
     %betaqp  = xn{7}(:); 
 
     lqp=length(xn{1}(:));
-    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
     stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
-    
-
     disp('build state variable')
-    %T1Pqp   = xn{1}(:);
-    %T1Lqp   = xn{2}(:);
-    
     
     currentTR = 2;
     % >> syms a  kpl d currentTR    T1P kveqp T1L 
@@ -260,7 +234,7 @@ if optf
     
     x0.FaList = params.FaList;
     x0.state  = repmat(Mz',1,1,lqp);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7)
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
 
@@ -279,8 +253,8 @@ if optf
     ylabel('MI Mxy')
     xlabel('sec')
     figure(11)
-    plot(params.TRList,params.FaList(1,:),'b',params.TRList,params.FaList(2,:),'k')
-    ylabel('MI FA')
+    plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
+    ylabel('MI FA (deg)')
     xlabel('sec')
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
@@ -293,14 +267,4 @@ if optf
     xlabel('sec')
 end 
 
-
-%% convert time sequence to TR and TR to time sequence
-function TR = getTR(t)
-% compute TR from time sequence
-    N = size(t,2);
-    TR = zeros(1,N-1);
-    for i=1:(N-1)
-        TR(i) = t(i+1) - t(i);
-    end
-end
 
