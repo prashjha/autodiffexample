@@ -255,11 +255,11 @@ if optf
     figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
-    xlabel('sec')
+    xlabel('sec'); legend('Pyr','Lac')
     figure(11)
     plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
     ylabel('MI FA (deg)')
-    xlabel('sec')
+    xlabel('sec'); legend('Pyr','Lac')
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
     hold
@@ -268,7 +268,7 @@ if optf
     plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
     plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
     ylabel('MI Mz ')
-    xlabel('sec')
+    xlabel('sec'); legend('Pyr','Lac')
 end 
 
 
