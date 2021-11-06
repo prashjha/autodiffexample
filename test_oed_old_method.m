@@ -165,7 +165,7 @@ if optf
     maxiter=400;
 
     % fn
-    Fx = @(x) MI_GHQuad_HPTofts_With_Der_Parallel_pkj(x, M0, params, model, NumberUncertain, xn, wn, xn2, wn2, T1Pqp, T1Lqp, kplqp, klpqp, kveqp, t0qp);
+    Fx = @(x) MI_GHQuad_HPTofts_With_Der_Parallel_old_method(x, M0, params, model, NumberUncertain, xn, wn, xn2, wn2, T1Pqp, T1Lqp, kplqp, klpqp, kveqp, t0qp);
 
     tic;
     [popt,fval,exitflag,output,lambda,grad,hessian] ...
