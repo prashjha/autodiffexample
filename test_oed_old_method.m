@@ -175,7 +175,7 @@ if optf
         'GradObj','on'));
     toc;
 
-    params.FaList = popt.FaList;
+    params.FaList = reshape(popt(1:end),size(params.FaList ));
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
     figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
@@ -187,11 +187,6 @@ if optf
     xlabel('sec'); legend('Pyr','Lac')
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
-    hold
-    plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
-    plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
-    plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
-    plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
 end 
