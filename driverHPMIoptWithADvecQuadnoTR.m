@@ -218,7 +218,7 @@ if optf
     for jjj=1:lqp2
       znu=xn2{1}(jjj) ;
       %Hz = Hz + wn2(jjj) * (wn(lqpchoosetwo(:,1))' * log(exp(-(znu + diffsummone').^2/sqrt(2)/signu   - (znu + diffsummtwo').^2/sqrt(2)/signu  ).* wn(lqpchoosetwo(:,2))));
-      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/sqrt(2)/signu   - (znu + diffsummtwo).^2/sqrt(2)/signu  ) * wn(:)));
+      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signu^2   - (znu + diffsummtwo).^2/2/signu^2  ) * wn(:)));
     end
     MIGaussObj = -pi^(-1.5-2.5)*Hz; 
 
