@@ -186,7 +186,7 @@ if optf
         %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
         integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
         aiftermpyr = deltat * kveqp.*  [ exp(- T1Pqp.^(-1) - kplqp - kveqp)*deltat*[.5:1:nsubstep]  ].* integrand ; 
-        aiftermlac = deltat * kveqp.*  ([ (kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) - kplqp.*exp(-T1Lqp.^(-1) )).* ((-T1Pqp.^(-1) - kplqp - kveqp) + T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  )   .* integrand ; 
+        aiftermlac = deltat * kveqp.*  ([ (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) + kplqp.*exp(-T1Lqp.^(-1) )).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  )   .* integrand ; 
 
         % setup state as linear constraint
         stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) -  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) == reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
