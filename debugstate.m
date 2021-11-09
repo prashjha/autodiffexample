@@ -120,11 +120,21 @@ for idesign = 2:2
       % mid-point rule integration
       aifterm = kveqp * deltat * [ exp((-1/T1P - kpl - kveqp)*deltat*[.5:1:nsubstep] );
     (kpl*exp((-1/T1P - kpl - kveqp)*deltat*[.5:1:nsubstep] ) - kpl*exp(-1/T1L *deltat*[.5:1:nsubstep] ))/((-1/T1P - kpl - kveqp) + 1/T1L )] * integrand ;
-      statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
-      statevariable(:,iii+1) =  cos(params.FaList(:,iii+1)).* statevariable(:,iii+1);
-      %statevariable(:,iii+1) =  expATR *( cos(params.FaList(:,iii)).* statevariable(:,iii ))   + aifterm     ;
+      %statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
+      %statevariable(:,iii+1) =  cos(params.FaList(:,iii+1)).* statevariable(:,iii+1);
+      statevariable(:,iii+1) =  expATR *( cos(params.FaList(:,iii)).* statevariable(:,iii ))   + aifterm     ;
     end
 end 
+% state2 = expA         state1 + aif
+% state2 = cos FA2 state2 
+% state3 = expA         state2 + aif  ==>   state3 = expA  cos FA2 (expA state1 + aif) + aif  
+% state3 = cos FA3 state3 
+% state4 = expA         state3 + aif
+% state4 = cos FA4 state4 
+
+% state2 = expA cos FA1 state1 + aif
+% state3 = expA cos FA2 state2 + aif  ==>   state3 = expA cos FA2 (expA cos FA1 state1 + aif) + aif 
+% state4 = expA cos FA3 state3 + aif
     figure(3)
     plot(params.TRList,walkerMz(1,:),'b--',params.TRList,walkerMz(2,:),'k--')
     hold

@@ -25,7 +25,7 @@ betasttd  =  [.3];
 tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
 
 % quad points
-NGauss = 3;
+NGauss = 1;
 
 % noise for data distribution
 SignalNoiseMI = 10;

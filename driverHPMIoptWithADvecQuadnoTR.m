@@ -82,6 +82,8 @@ if plotinit
     % save('tmpShowMxyPub')
     figure(3)
     plot(TR_list,Mz(1,:),'b',TR_list,Mz(2,:),'k')
+    hold
+    plot(TR_list,Mz(1,:)./cos(params.FaList(1,:)),'b',TR_list,Mz(2,:)./cos(params.FaList(2,:)),'k')
     ylabel('Const Mz')
     xlabel('sec')
 
@@ -108,7 +110,7 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss = 3
+    NGauss = 1
 
     signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
@@ -186,7 +188,7 @@ if optf
         %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
         integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
         aiftermpyr = deltat * kveqp.*  [ exp(- T1Pqp.^(-1) - kplqp - kveqp)*deltat*[.5:1:nsubstep]  ].* integrand ; 
-        aiftermlac = deltat * kveqp.*  ([ (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) + kplqp.*exp(-T1Lqp.^(-1) )).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  )   .* integrand ; 
+        aiftermlac = deltat * kveqp.*  ([ (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) + kplqp.*exp(-T1Lqp.^(-1) )).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  ).* integrand ; 
 
         % setup state as linear constraint
         stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) -  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) == reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
@@ -236,8 +238,8 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.state  = repmat(Mz',1,1,lqp);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-4, 'OptimalityTolerance',1.e-4)
+    x0.state  = repmat(( Mz./cos(params.FaList))',1,1,lqp);
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-7)
 
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
@@ -261,12 +263,14 @@ if optf
     ylabel('MI FA (deg)')
     xlabel('sec'); legend('Pyr','Lac')
     figure(12)
-    plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
+    plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
     hold
     plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
-    plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
-    plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
-    plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
+    if(lqp > 1)
+      plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
+      plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
+      plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
+    end
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
 end 
