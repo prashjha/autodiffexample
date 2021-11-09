@@ -153,7 +153,7 @@ if optf
 
     lqp=length(xn{1}(:));
     %statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
-    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+    statevariable    = optimexpr(Ntime,Nspecies,lqp);
     stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     disp('build state variable')
@@ -195,6 +195,9 @@ if optf
         aiftermpyr = deltat * kveqp.*  [ exp(- T1Pqp.^(-1) - kplqp - kveqp)*deltat*[.5:1:nsubstep]  ].* integrand ; 
         aiftermlac = deltat * kveqp.*  ([ (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) + kplqp.*exp(-T1Lqp.^(-1) )).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  ).* integrand ; 
 
+        % compute state in reduced space
+        statevariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
+        statevariable(iii+1,2,:) =  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
         % setup state as linear constraint
         stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) ==  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
         stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) ==  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
@@ -244,7 +247,7 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.state  = repmat(( Mz./cos(params.FaList))',1,1,lqp);
+    %x0.state  = repmat(( Mz./cos(params.FaList))',1,1,lqp);
     myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-9, 'OptimalityTolerance',1.e-9,'InitBarrierParam',10,'PlotFcn','optimplotfval')
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','ScaleProblem',false,'StepTolerance',1.000000e-16)
                  
@@ -274,12 +277,8 @@ if optf
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
     hold
-    plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
-    if(lqp > 1)
-      plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
-      plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
-      plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
-    end
+    plot(TR_list,Mz(1,:),'b--',TR_list,Mz(2,:),'k--')
+    plot(TR_list,Mz(1,:)./cos(params.FaList(1,:)),'b',TR_list,Mz(2,:)./cos(params.FaList(2,:)),'k')
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
 end 
