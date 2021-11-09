@@ -16,10 +16,10 @@ Ntime = 23
 num_trials = 25;
 
 TR = 2;
-TR_list = (1:(Ntime))*TR;
+TR_list = (0:(Ntime-1))*TR;
 
 % plot gamma
-jmA0    = 10.
+jmA0    = 1.
 jmalpha = 2.5
 jmbeta  = 4.5
 jmt0    = 4
@@ -31,11 +31,11 @@ ylabel('aif')
 xlabel('sec')
 
 % init params
-initT1a = 43;
-initT1b = 33;
-initKpl = 0.1;
-kve = 0.02;
-ve = 0.95;
+initT1a = 30;
+initT1b = 25;
+initKpl = 0.15;
+kve = 0.05;
+ve = 1.00;
 VIF_scale_fact = [jmA0;0];
 opts = optimset('lsqcurvefit');
 opts.TolFun = 1e-09;
@@ -51,6 +51,7 @@ for idesign = 2:2
                 'TRList',TR_list,'PerfusionTerms',[kve,0],'volumeFractions',ve,...
                 'fitOptions', opts);
             params.FaList = 20*pi/180*ones(2,Ntime);
+            params.FaList(2,:) = 15*pi/180*ones(1,Ntime);
     case('OED') 
             % load oed results
             params = struct('t0',[jmt0;0],'gammaPdfA',[jmalpha;1],'gammaPdfB',[jmbeta;1],...
@@ -124,7 +125,7 @@ for idesign = 2:2
       %statevariable(:,iii+1) =  expATR *( cos(params.FaList(:,iii)).* statevariable(:,iii ))   + aifterm     ;
     end
 end 
-    figure(12)
+    figure(3)
     plot(params.TRList,walkerMz(1,:),'b--',params.TRList,walkerMz(2,:),'k--')
     hold
     plot(params.TRList,statevariable(1,:),'b',params.TRList,statevariable(2,:),'k')
