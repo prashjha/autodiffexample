@@ -25,7 +25,7 @@ betasttd  =  [.3];
 tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
 
 % quad points
-NGauss = 3;
+NGauss = 5;
 
 % noise for data distribution
 SignalNoiseMI = 10;
@@ -120,7 +120,7 @@ if optf
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
-    NumberUncertain = 3;
+    NumberUncertain = 5;
     switch (NumberUncertain)
        case(3)
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);

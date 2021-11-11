@@ -61,6 +61,7 @@ for i = 1:numel(FAType)
             end
             dbgoptflips = [ 0.3905    0.3937    0.4491    0.5411    0.5416    0.5543    0.5641    0.5731    0.5770    0.5851    0.5831      0.5844    0.5882    0.5887    0.5765    0.5620    0.6001    0.5865    0.5590    0.5301    0.5038    0.4815 0.4634; 0.2203    0.2207    0.2302    0.2949    0.3942    0.4161    0.4099    0.4122    0.4166    0.4217    0.4282      0.4359    0.4449    0.4558    0.4694    0.4865    0.5087    0.5391    0.5750    0.5990    0.6038    0.6057 0.6067];
             params.FaList = dbgoptflips ;
+            params.FaList = flips ;
     end
 
     
@@ -117,7 +118,9 @@ if optf
     diffTR = diff(TRList);
     NGauss = 3
 
+    signu = .1 ; % TODO - FIXME
     signu = 10 ; % TODO - FIXME
+    signu = 1  ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
@@ -245,9 +248,13 @@ if optf
     
     x0.FaList = params.FaList;
     x0.state  = repmat(( Mz./cos(params.FaList))',1,1,lqp);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-9, 'OptimalityTolerance',1.e-9,'InitBarrierParam',10,'PlotFcn','optimplotfval')
+    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-9, 'OptimalityTolerance',1.e-9,'InitBarrierParam',10,'PlotFcn','optimplotfval')
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','ScaleProblem',false,'StepTolerance',1.000000e-16)
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-12, 'OptimalityTolerance',1.e-7,'Algorithm','sqp','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false)
                  
+
+
+             
 
     % truthconstraint = infeasibility(stateconstraint,x0);
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )

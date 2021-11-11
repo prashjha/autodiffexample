@@ -139,3 +139,10 @@ end
     plot(params.TRList,walkerMz(1,:),'b--',params.TRList,walkerMz(2,:),'k--')
     hold
     plot(params.TRList,statevariable(1,:),'b',params.TRList,statevariable(2,:),'k')
+
+statevariablerep  = repmat(statevariable(:),27,1);
+Xtest = [params.FaList(:);statevariablerep  ];
+size(Xtest)
+adparam = load('extraParamsUncertain3NGauss3.mat')
+[initVals.f,initVals.g] = generatedObjective(Xtest,adparam.extraParams{:});
+    
