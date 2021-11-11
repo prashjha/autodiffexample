@@ -28,7 +28,7 @@ tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd
 NGauss = 3;
 
 % noise for data distribution
-SignalNoiseMI = 10;
+SignalNoiseMI = 0.01;
 
 %% Variable Setup
 Ntime = 23;
@@ -116,7 +116,7 @@ if optf
     TRList = TR_list;
     diffTR = diff(TRList);
 
-    signu = 10 ; % TODO - FIXME
+    signu = SignalNoiseMI ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
@@ -189,6 +189,10 @@ if optf
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
+    figure(13)
+    plot(fval)
+    ylabel('MI')
+    xlabel('Iterations'); 
 end 
 
 %% convert time sequence to TR and TR to time sequence
