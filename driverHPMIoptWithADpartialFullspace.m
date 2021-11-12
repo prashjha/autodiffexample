@@ -59,8 +59,10 @@ for i = 1:numel(FAType)
                 flips(2,n) = 15*pi/180;
                 flips(1,n) = 20*pi/180;
             end
-            dbgoptflips = [ 0.3905    0.3937    0.4491    0.5411    0.5416    0.5543    0.5641    0.5731    0.5770    0.5851    0.5831      0.5844    0.5882    0.5887    0.5765    0.5620    0.6001    0.5865    0.5590    0.5301    0.5038    0.4815 0.4634; 0.2203    0.2207    0.2302    0.2949    0.3942    0.4161    0.4099    0.4122    0.4166    0.4217    0.4282      0.4359    0.4449    0.4558    0.4694    0.4865    0.5087    0.5391    0.5750    0.5990    0.6038    0.6057 0.6067];
+            dbgoptflips  =[ 0.3873    0.3876    0.4299    0.5295    0.5512    0.5510    0.5618    0.5783    0.5772    0.5890    0.5853 0.5847    0.5657    0.5724    0.6042    0.5874    0.5597    0.5299    0.5020    0.4777    0.4578    0.4420    0.4297; 0.2236    0.2236    0.2297    0.2691    0.3527    0.4070    0.4150    0.4132    0.4151    0.4201    0.4267 0.4346    0.4433    0.4534    0.4657    0.4825    0.5071    0.5418    0.5779    0.5999    0.6040    0.6058    0.6068 ];
+
             params.FaList = dbgoptflips ;
+            params.FaList = flips ;
     end
 
     
@@ -115,8 +117,10 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss = 2
+    NGauss = 5
 
+    signu = .1 ; % TODO - FIXME
+    signu = 1  ; % TODO - FIXME
     signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
@@ -161,7 +165,12 @@ if optf
 
     lqp=length(xn{1}(:));
     %statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
-    statevariable    = optimexpr(Ntime,Nspecies,lqp);
+    statevariableraw  = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+    stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
+
+    % scaling important for the optimizaiton step length update
+    scalestate = 1.e-2;
+    statevariable =scalestate * statevariableraw;
 
     disp('build state variable')
     
@@ -190,7 +199,7 @@ if optf
     expATRtwotwo = exp(-currentTR * T1Lqp.^(-1));
      
     % IC
-    statevariable(1,:,:) ==0;
+    stateconstraint(1,:,:)  = statevariable(1,:,:) ==0;
     for iii = 1:Ntime-1
         currentTR = diffTR(iii);
         nsubstep = 5;
@@ -202,12 +211,9 @@ if optf
         aiftermpyr = deltat * kveqp.*  [ exp(- T1Pqp.^(-1) - kplqp - kveqp)*deltat*[.5:1:nsubstep]  ].* integrand ; 
         aiftermlac = deltat * kveqp.*  ([ (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) + kplqp.*exp(-T1Lqp.^(-1) )).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  ).* integrand ; 
 
-        % compute state in reduced space
-        statevariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
-        statevariable(iii+1,2,:) =  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
         % setup state as linear constraint
-        statevariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
-        statevariable(iii+1,2,:) =  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
+        stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) ==  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
+        stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) ==  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
     end
 
     disp('build objective function')
@@ -227,33 +233,34 @@ if optf
     %diffsummtwo = sumstatevariable(2,lqpchoosetwo(:,1)) - sumstatevariable(2,lqpchoosetwo(:,2));
     %diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
     %diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
-    expandvar  = ones(1,lqp);
-    diffsummone = sumstatevariable(1,:)' * expandvar   - expandvar' * sumstatevariable(1,:);
-    diffsummtwo = sumstatevariable(2,:)' * expandvar   - expandvar' * sumstatevariable(2,:);
-
     znu = 12345;
-    Hz = exp(-(znu + sumstatevariable(1,1)- sumstatevariable(1,2)).^2/2/signu^2   - (znu + sumstatevariable(2,1)- sumstatevariable(2,2)).^2/2/signu^2  );
-    MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
+    MIGaussObj = exp(-(znu + sumstatevariable(1,1)- sumstatevariable(1,2)).^2/2/signu^2   - (znu + sumstatevariable(2,1)- sumstatevariable(2,2)).^2/2/signu^2  );
 
     
     %% 
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
-    convprob = optimproblem('Objective',MIGaussObj );
+    convprob = optimproblem('Objective',MIGaussObj , "Constraints",stateconstraint);
     %% 
     % View the new problem.
     
     %show(convprob)
-    problem = prob2struct(convprob,'ObjectiveFunctionName','reducedObjective');
+    problem = prob2struct(convprob,'ObjectiveFunctionName','partialObjective','ConstraintFunctionName','partialConstraint');
     %% 
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    %x0.state  = repmat(( Mz./cos(params.FaList))',1,1,lqp);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-9, 'OptimalityTolerance',1.e-9,'InitBarrierParam',10,'PlotFcn','optimplotfval')
+    x0.state  = repmat(1/scalestate * ( Mz./cos(params.FaList))',1,1,lqp);
+    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-8, 'OptimalityTolerance',1.e-7,'Algorithm','interior-point','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','ScaleProblem',false,'StepTolerance',1.000000e-16)
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
                  
+
+
+
+
+             
 
     % truthconstraint = infeasibility(stateconstraint,x0);
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
@@ -280,8 +287,12 @@ if optf
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
     hold
-    plot(TR_list,Mz(1,:),'b--',TR_list,Mz(2,:),'k--')
-    plot(TR_list,Mz(1,:)./cos(params.FaList(1,:)),'b',TR_list,Mz(2,:)./cos(params.FaList(2,:)),'k')
+    plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
+    if(lqp > 1)
+      plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
+      plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
+      plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
+    end
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
 end 
