@@ -117,7 +117,7 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss = 5
+    NGauss = 2
 
     signu = .1 ; % TODO - FIXME
     signu = 1  ; % TODO - FIXME
@@ -247,6 +247,9 @@ if optf
     
     %show(convprob)
     problem = prob2struct(convprob,'ObjectiveFunctionName','partialObjective','ConstraintFunctionName','partialConstraint');
+    % save parameters for later
+    extraParams = functions(problem.objective).workspace{1}.extraParams;
+    save('extraParamsPartialFull.mat','extraParams' )
     %% 
     % Solve the new problem. The solution is essentially the same as before.
     

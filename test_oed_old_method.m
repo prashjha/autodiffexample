@@ -28,7 +28,7 @@ tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd
 NGauss = 5;
 
 % noise for data distribution
-SignalNoiseMI = 0.01;
+SignalNoiseMI = 10;
 
 %% Variable Setup
 Ntime = 23;
@@ -189,10 +189,6 @@ if optf
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
     ylabel('adj MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
-    figure(13)
-    plot(fval)
-    ylabel('MI')
-    xlabel('Iterations'); 
 end 
 
 %% convert time sequence to TR and TR to time sequence

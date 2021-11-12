@@ -119,9 +119,9 @@ if optf
     diffTR = diff(TRList);
     NGauss = 5
 
-    signu = .1 ; % TODO - FIXME
     signu = 1  ; % TODO - FIXME
     signu = 10 ; % TODO - FIXME
+    signu = .1 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
@@ -256,7 +256,6 @@ if optf
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-8, 'OptimalityTolerance',1.e-7,'Algorithm','interior-point','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','ScaleProblem',false,'StepTolerance',1.000000e-16)
     myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
-                 
 
 
 
