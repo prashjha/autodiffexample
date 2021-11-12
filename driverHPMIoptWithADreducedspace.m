@@ -115,14 +115,22 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss = 3
+    NGauss = 2
 
     signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
-    NumberUncertain = 3
+    NumberUncertain = 1
     switch (NumberUncertain)
+       case(1)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,tisinput(5),tisinput(6));
+         T1Pqp   = T1pmean;
+         T1Lqp   = T1lmean;
+         kplqp   = xn{1}(:);
+         klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+         kveqp   = kvemean(1) ;
+         t0qp    = t0mean(1);
        case(3)
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
          T1Pqp   = T1pmean;
@@ -154,7 +162,6 @@ if optf
     lqp=length(xn{1}(:));
     %statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
     statevariable    = optimexpr(Ntime,Nspecies,lqp);
-    stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
     disp('build state variable')
     
@@ -183,7 +190,7 @@ if optf
     expATRtwotwo = exp(-currentTR * T1Lqp.^(-1));
      
     % IC
-    stateconstraint(1,:,:)  = statevariable(1,:,:) ==0;
+    statevariable(1,:,:) ==0;
     for iii = 1:Ntime-1
         currentTR = diffTR(iii);
         nsubstep = 5;
@@ -199,8 +206,8 @@ if optf
         statevariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
         statevariable(iii+1,2,:) =  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
         % setup state as linear constraint
-        stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) ==  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
-        stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) ==  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
+        statevariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
+        statevariable(iii+1,2,:) =  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
     end
 
     disp('build objective function')
@@ -237,12 +244,12 @@ if optf
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
-    convprob = optimproblem('Objective',MIGaussObj , "Constraints",stateconstraint);
+    convprob = optimproblem('Objective',MIGaussObj );
     %% 
     % View the new problem.
     
     %show(convprob)
-    problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjective');
+    problem = prob2struct(convprob,'ObjectiveFunctionName','reducedObjective');
     %% 
     % Solve the new problem. The solution is essentially the same as before.
     
