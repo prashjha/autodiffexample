@@ -59,7 +59,8 @@ for i = 1:numel(FAType)
                 flips(2,n) = 15*pi/180;
                 flips(1,n) = 20*pi/180;
             end
-            dbgoptflips = [ 0.3905    0.3937    0.4491    0.5411    0.5416    0.5543    0.5641    0.5731    0.5770    0.5851    0.5831      0.5844    0.5882    0.5887    0.5765    0.5620    0.6001    0.5865    0.5590    0.5301    0.5038    0.4815 0.4634; 0.2203    0.2207    0.2302    0.2949    0.3942    0.4161    0.4099    0.4122    0.4166    0.4217    0.4282      0.4359    0.4449    0.4558    0.4694    0.4865    0.5087    0.5391    0.5750    0.5990    0.6038    0.6057 0.6067];
+            dbgoptflips  =[ 0.3873    0.3876    0.4299    0.5295    0.5512    0.5510    0.5618    0.5783    0.5772    0.5890    0.5853 0.5847    0.5657    0.5724    0.6042    0.5874    0.5597    0.5299    0.5020    0.4777    0.4578    0.4420    0.4297; 0.2236    0.2236    0.2297    0.2691    0.3527    0.4070    0.4150    0.4132    0.4151    0.4201    0.4267 0.4346    0.4433    0.4534    0.4657    0.4825    0.5071    0.5418    0.5779    0.5999    0.6040    0.6058    0.6068 ];
+
             params.FaList = dbgoptflips ;
             params.FaList = flips ;
     end
@@ -116,11 +117,11 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss = 3
+    NGauss = 5
 
     signu = .1 ; % TODO - FIXME
-    signu = 10 ; % TODO - FIXME
     signu = 1  ; % TODO - FIXME
+    signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
@@ -156,8 +157,12 @@ if optf
 
     lqp=length(xn{1}(:));
     %statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
-    statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+    statevariableraw  = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
     stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
+
+    % scaling important for the optimizaiton step length update
+    scalestate = 1.e-2;
+    statevariable =scalestate * statevariableraw;
 
     disp('build state variable')
     
@@ -247,11 +252,13 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.state  = repmat(( Mz./cos(params.FaList))',1,1,lqp);
-    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-9, 'OptimalityTolerance',1.e-9,'InitBarrierParam',10,'PlotFcn','optimplotfval')
+    x0.state  = repmat(1/scalestate * ( Mz./cos(params.FaList))',1,1,lqp);
+    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-8, 'OptimalityTolerance',1.e-7,'Algorithm','interior-point','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','ScaleProblem',false,'StepTolerance',1.000000e-16)
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-12, 'OptimalityTolerance',1.e-7,'Algorithm','sqp','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false)
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
                  
+
+
 
 
              

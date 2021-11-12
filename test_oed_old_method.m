@@ -28,7 +28,7 @@ tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd
 NGauss = 5;
 
 % noise for data distribution
-SignalNoiseMI = 0.01;
+SignalNoiseMI = 10;
 
 %% Variable Setup
 Ntime = 23;
@@ -120,7 +120,7 @@ if optf
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
-    NumberUncertain = 5;
+    NumberUncertain = 3;
     switch (NumberUncertain)
        case(3)
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
@@ -179,20 +179,16 @@ if optf
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
     figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
-    ylabel('MI Mxy')
+    ylabel('adj MI Mxy')
     xlabel('sec'); legend('Pyr','Lac')
     figure(11)
     plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
-    ylabel('MI FA (deg)')
+    ylabel('adj MI FA (deg)')
     xlabel('sec'); legend('Pyr','Lac')
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
-    ylabel('MI Mz ')
+    ylabel('adj MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
-    figure(13)
-    plot(fval)
-    ylabel('MI')
-    xlabel('Iterations'); 
 end 
 
 %% convert time sequence to TR and TR to time sequence
