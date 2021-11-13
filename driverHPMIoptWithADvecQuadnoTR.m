@@ -117,7 +117,7 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss = 5
+    NGauss = 4
 
     signu = 1  ; % TODO - FIXME
     signu = 10 ; % TODO - FIXME
@@ -253,14 +253,9 @@ if optf
     
     x0.FaList = params.FaList;
     x0.state  = repmat(1/scalestate * ( Mz./cos(params.FaList))',1,1,lqp);
-    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-8, 'OptimalityTolerance',1.e-7,'Algorithm','interior-point','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
+    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-8, 'OptimalityTolerance',1.e-7,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
     %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','ScaleProblem',false,'StepTolerance',1.000000e-16)
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','ScaleProblem','none','StepTolerance',1.000000e-12,'MaxIterations',1000,'HonorBounds',false,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
-
-
-
-
-             
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
 
     % truthconstraint = infeasibility(stateconstraint,x0);
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
@@ -274,16 +269,19 @@ if optf
 
     toc;
 
+    save(sprintf('poptNG%dNu%d%s.mat',NGauss,NumberUncertain,myoptions.Algorithm) ,'popt')
     params.FaList = popt.FaList;
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    figure(10)
+    handle = figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
     xlabel('sec'); legend('Pyr','Lac')
-    figure(11)
+    saveas(handle,sprintf('OptMxyG%dNu%d%s',NGauss,NumberUncertain,myoptions.Algorithm),'png')
+    handle = figure(11)
     plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
     ylabel('MI FA (deg)')
     xlabel('sec'); legend('Pyr','Lac')
+    saveas(handle,sprintf('OptFANG%dNu%d%s',NGauss,NumberUncertain,myoptions.Algorithm),'png')
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
     hold
@@ -295,6 +293,7 @@ if optf
     end
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
+    saveas(handle,sprintf('OptMzG%dNu%d%s',NGauss,NumberUncertain,myoptions.Algorithm),'png')
 end 
 
 
