@@ -1,0 +1,95 @@
+\documentclass[10pt]{amsart}
+\usepackage[left=.25in,right=.25in,top=.25in,bottom=.25in]{geometry}
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{color,graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{verbatim}
+%\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+\newcommand{\eqn}[1]{(\ref{#1})}
+
+%\renewcommand{\labelenumi}{\arabic{enumi}. }
+
+%http://latex2rtf.sourceforge.net/latex2rtf_1_9_19.html#Conditional-Parsing
+%Starting with LaTeX2RTF 1.9.18, there is a handy method for
+%controlling which content should be processed by LaTeX or by
+%LaTeX2RTF . Control is achieved using the standard \if facility of
+%TeX. If you include the following line in the preamble of your document 
+%
+%     \newif\iflatextortf
+%Then you will create a new \iflatextortf command in LaTeX . TeX
+%sets the value of this to false by default. Now, LaTeX2RTF
+%internally sets \iflatextortf to be true, and to ensure that this
+%is always the case, LaTeX2RTF ignores the command
+%\latextortffalse. This means that you can control how different
+%applications process your document by
+%
+%     \iflatextortf
+%     This code is processed only by latex2rtf
+%     \else
+%     This code is processed only by latex
+%     \fi
+%Note that \iflatextortf will only work within a section; you
+%cannot use this command to conditionally parse code that crosses
+%section boundaries. Also, it will only work on complete table or
+%figure environments. Due to the mechanism used by LaTeX2RTF in
+%processing these environments, at this time the only way to
+%conditionally parse tables and figures is to include two complete
+%versions of the environment in question, nested within an
+%appropriate \iflatextortf structure.
+%
+\usepackage{boxedminipage,float}
+\usepackage{wrapfig,setspace}
+\usepackage[pdftex, plainpages=false, colorlinks=true, citecolor=black, filecolor=black, linkcolor=black, urlcolor=black]{hyperref}
+
+
+\newcommand{\picdir}{./pdffig}
+\newcommand\viewdata[1]{
+\begin{figure}[h]
+\begin{tabular}{cccc} 
+ \IfFileExists{history#1.png}{\includegraphics[width=0.25\textwidth]{{history#1}.png}}{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+&\IfFileExists{OptMxy#1.png}{\includegraphics[width=0.25\textwidth]{{OptMxy#1}.png} }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+&\IfFileExists{OptFA#1.png}{\includegraphics[width=0.25\textwidth]{{OptFA#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+&\IfFileExists{OptMz#1.png}{\includegraphics[width=0.25\textwidth]{{OptMz#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+\end{tabular}           
+\caption{#1}\label{Fig:#1}
+\end{figure}
+}
+
+\author{
+        D.~Fuentes\textsuperscript{1} \
+}
+
+\date{ \small
+The University of Texas M.D. Anderson Cancer Center,\\
+Departments of \textsuperscript{1}Imaging Physics, \textsuperscript{2}Diagnostic Radiology,
+\textsuperscript{3}Gastrointenstinal Oncology,
+and \textsuperscript{4}Biostatistics, Houston TX 77030, USA \\
+%Email: \texttt{jhazle@mdanderson.org}   \\
+Received: date / Accepted: date
+% Webpage: \texttt{http://wiki.ices.utexas.edu/dddas}
+}
+
+
+
+
+
+\begin{document}
+
+\setlength{\unitlength}{.15cm}
+
+\viewdata{NG3Nu3adjSNR10}
+\viewdata{NG3Nu3interior-pointSNR10}
+\viewdata{NG3Nu3sqpSNR10}
+\clearpage
+\viewdata{NG4Nu3adjSNR10}
+\viewdata{NG4Nu3interior-pointSNR10}
+\viewdata{NG4Nu3sqpSNR10}
+\clearpage
+\viewdata{NG5Nu3adjSNR10}
+\viewdata{NG5Nu3interior-pointSNR10}
+\viewdata{NG5Nu3sqpSNR10}
+
+\end{document}

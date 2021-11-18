@@ -25,7 +25,7 @@ betasttd  =  [.3];
 tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
 
 % quad points
-NGauss = 3;
+NGauss = 4;
 
 % noise for data distribution
 SignalNoiseMI = 10;
@@ -172,12 +172,12 @@ if optf
      =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
         optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
         maxiter,'Display','iter-detailed',... 
-        'GradObj','on','PlotFcn','optimplotfval'));
+        'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
     toc;
 
     % save convergence history
     handle = figure(5)
-    saveas(handle,sprintf('historyG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI ),'png')
+    saveas(handle,sprintf('historyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI ),'png')
     params.FaList = reshape(popt(1:end),size(params.FaList ));
     save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'params')
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
@@ -185,7 +185,7 @@ if optf
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
     ylabel('adj MI Mxy')
     xlabel('sec'); legend('Pyr','Lac')
-    saveas(handle,sprintf('OptMxyG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+    saveas(handle,sprintf('OptMxyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
     handle = figure(11)
     plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
     ylabel('adj MI FA (deg)')
@@ -195,7 +195,7 @@ if optf
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
     ylabel('adj MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
-    saveas(handle,sprintf('OptMzG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+    saveas(handle,sprintf('OptMzNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
 end 
 
 %% convert time sequence to TR and TR to time sequence
