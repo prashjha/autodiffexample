@@ -176,19 +176,23 @@ if optf
     toc;
 
     params.FaList = reshape(popt(1:end),size(params.FaList ));
+    save(sprintf('poptNG%dNu%dadj.mat',NGauss,NumberUncertain) ,'params')
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    figure(10)
+    handle = figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
     ylabel('adj MI Mxy')
     xlabel('sec'); legend('Pyr','Lac')
-    figure(11)
+    saveas(handle,sprintf('OptMxyG%dNu%dadj',NGauss,NumberUncertain),'png')
+    handle = figure(11)
     plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
     ylabel('adj MI FA (deg)')
     xlabel('sec'); legend('Pyr','Lac')
-    figure(12)
+    saveas(handle,sprintf('OptFANG%dNu%dadj',NGauss,NumberUncertain),'png')
+    handle = figure(12)
     plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
     ylabel('adj MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
+    saveas(handle,sprintf('OptMzG%dNu%dadj',NGauss,NumberUncertain),'png')
 end 
 
 %% convert time sequence to TR and TR to time sequence
