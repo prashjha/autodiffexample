@@ -117,11 +117,10 @@ if optf
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     diffTR = diff(TRList);
-    NGauss = 5
+    NGauss = 3
 
-    signu = 1  ; % TODO - FIXME
-    signu = 10 ; % TODO - FIXME
     signu = .1 ; % TODO - FIXME
+    signu = 10 ; % TODO - FIXME
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
@@ -267,23 +266,24 @@ if optf
     %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative','auto-reverse','ObjectiveDerivative', 'finite-differences' )
 
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
-
-
     toc;
+    % save convergence history
+    handle = figure(5)
+    saveas(handle,sprintf('historyG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu ),'png')
 
-    save(sprintf('poptNG%dNu%d%s.mat',NGauss,NumberUncertain,myoptions.Algorithm) ,'popt')
+    save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,signu) ,'popt')
     params.FaList = popt.FaList;
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
     handle = figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
     xlabel('sec'); legend('Pyr','Lac')
-    saveas(handle,sprintf('OptMxyG%dNu%d%s',NGauss,NumberUncertain,myoptions.Algorithm),'png')
+    saveas(handle,sprintf('OptMxyG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
     handle = figure(11)
     plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
     ylabel('MI FA (deg)')
     xlabel('sec'); legend('Pyr','Lac')
-    saveas(handle,sprintf('OptFANG%dNu%d%s',NGauss,NumberUncertain,myoptions.Algorithm),'png')
+    saveas(handle,sprintf('OptFANG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
     figure(12)
     plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
     hold
@@ -295,7 +295,7 @@ if optf
     end
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
-    saveas(handle,sprintf('OptMzG%dNu%d%s',NGauss,NumberUncertain,myoptions.Algorithm),'png')
+    saveas(handle,sprintf('OptMzG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
 end 
 
 
