@@ -284,7 +284,7 @@ if optf
     ylabel('MI FA (deg)')
     xlabel('sec'); legend('Pyr','Lac')
     saveas(handle,sprintf('OptFANG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
-    figure(12)
+    handle = figure(12)
     plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
     hold
     plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
