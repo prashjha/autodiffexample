@@ -49,10 +49,10 @@
 \newcommand\viewdata[1]{
 \begin{figure}[h]
 \begin{tabular}{cccc} 
- \IfFileExists{history#1.png}{\includegraphics[width=0.25\textwidth]{{history#1}.png}}{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
-&\IfFileExists{OptMxy#1.png}{\includegraphics[width=0.25\textwidth]{{OptMxy#1}.png} }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
-&\IfFileExists{OptFA#1.png}{\includegraphics[width=0.25\textwidth]{{OptFA#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
-&\IfFileExists{OptMz#1.png}{\includegraphics[width=0.25\textwidth]{{OptMz#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+ \IfFileExists{history#1.png}{\includegraphics[width=0.24\textwidth]{{history#1}.png}}{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+&\IfFileExists{OptMxy#1.png}{\includegraphics[width=0.24\textwidth]{{OptMxy#1}.png} }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+&\IfFileExists{OptFA#1.png}{\includegraphics[width=0.24\textwidth]{{OptFA#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
+&\IfFileExists{OptMz#1.png}{\includegraphics[width=0.24\textwidth]{{OptMz#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
 \end{tabular}           
 \caption{#1}\label{Fig:#1}
 \end{figure}
@@ -81,15 +81,13 @@ Received: date / Accepted: date
 \setlength{\unitlength}{.15cm}
 
 \viewdata{NG3Nu3adjSNR10}
-\viewdata{NG3Nu3interior-pointSNR10}
-\viewdata{NG3Nu3sqpSNR10}
-\clearpage
 \viewdata{NG4Nu3adjSNR10}
-\viewdata{NG4Nu3interior-pointSNR10}
-\viewdata{NG4Nu3sqpSNR10}
-\clearpage
 \viewdata{NG5Nu3adjSNR10}
+\viewdata{NG3Nu3interior-pointSNR10}
+\viewdata{NG4Nu3interior-pointSNR10}
 \viewdata{NG5Nu3interior-pointSNR10}
+\viewdata{NG3Nu3sqpSNR10}
+\viewdata{NG4Nu3sqpSNR10}
 \viewdata{NG5Nu3sqpSNR10}
 
 \end{document}
