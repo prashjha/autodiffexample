@@ -265,27 +265,21 @@ if optf
 
     % truthconstraint = infeasibility(stateconstraint,x0);
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
-    %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1.e7)
 
-    %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative','finite-differences','ObjectiveDerivative', 'finite-differences' )
-    %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative','auto-reverse','ObjectiveDerivative', 'finite-differences' )
-
-    %[popt,fval,exitflag,output] = solve(convprob,x0 )
     toc;
     % save convergence history
     handle = figure(5)
     saveas(handle,sprintf('historyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu ),'png')
-
-    save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,signu) ,'popt')
-    params.FaList = popt.FaList;
+    % save solution
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
+    save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,signu) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt')
     handle = figure(10)
     plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
     xlabel('sec'); legend('Pyr','Lac')
     saveas(handle,sprintf('OptMxyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
     handle = figure(11)
-    plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
+    plot(params.TRList,popt.FaList(1,:)*180/pi,'b',params.TRList,popt.FaList(2,:)*180/pi,'k')
     ylabel('MI FA (deg)')
     xlabel('sec'); legend('Pyr','Lac')
     saveas(handle,sprintf('OptFANG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
