@@ -10,10 +10,12 @@ idcst = 2;
 
 solverType = {'adj','sqp','interior-point'};
 gpList = [3, 4,5]
+solverType = {'adj'};
+gpList = [3]
 uncertainList = [3]
 snrList = [10]
 numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList)
-solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[]);
+solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [], 'Mxyopt', [], 'Mzopt', []);
 icount  = 0;
 for isolver = 1:numel(solverType)
  for igp = 1:length(gpList)
@@ -21,7 +23,7 @@ for isolver = 1:numel(solverType)
    for isnr = 1:length(snrList)
       worktmp = load(sprintf('poptNG%dNu%d%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},snrList(isnr)));
       icount= icount+1;
-      solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'Mxy',worktmp.Mxy,'Mz',worktmp.Mz);
+      solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz, 'Mxyopt',worktmp.Mxyopt, 'Mzopt',worktmp.Mzopt);
    end
   end
  end
@@ -29,30 +31,11 @@ end
 
 
 % load synthetic data
-mymask = niftiread('pyrlacmip.nii.gz');
-Nspecies = 2
-Ntime = 23
-npixel = 16
-cstpyr = zeros(Ntime,npixel,npixel,npixel);
-cstlac = zeros(Ntime,npixel,npixel,npixel);
-oedpyr = zeros(Ntime,npixel,npixel,npixel);
-oedlac = zeros(Ntime,npixel,npixel,npixel);
-for iddata = 1:Ntime
-   disp(sprintf('iddata = %d',iddata));
-   cstpyr(iddata,:,:,:) = niftiread(sprintf('const_design/pyruvate%06d.nii.gz',iddata));
-   cstlac(iddata,:,:,:) = niftiread(sprintf('const_design/lactate%06d.nii.gz' ,iddata));
-   oedpyr(iddata,:,:,:) = niftiread(sprintf('oed_design/pyruvate%06d.nii.gz'  ,iddata));
-   oedlac(iddata,:,:,:) = niftiread(sprintf('oed_design/lactate%06d.nii.gz'   ,iddata));
-end
-
-aifLabelValue = 1;
-[xroi,yroi,zroi] = ind2sub(size(mymask ), find(mymask ==aifLabelValue  ));
-
 imagenoise = 7.e-3;
 % extract timehistory info
 num_trials = 25;
-nroipixel = length(xroi);
-timehistory  = zeros(Ntime,Nspecies,nroipixel+1,num_trials+1,numel(FAType));
+timehistory  = zeros(Ntime,Nspecies,num_trials+1,numel(solverType)+1, length(gpList),length(uncertainList),length(snrList) );
+
 for jjj =1:nroipixel 
   %disp([xroi(jjj),yroi(jjj),zroi(jjj)]);
   timehistory(:,1,jjj,num_trials+1,idoed) = oedpyr(:,xroi(jjj),yroi(jjj),zroi(jjj));

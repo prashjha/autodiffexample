@@ -7,10 +7,12 @@ clear all
 clc
 driverHPMIoptadj(3,3,10)
 driverHPMIoptadj(4,3,10)
-%driverHPMIoptadj(5,3,10)
+driverHPMIoptadj(5,3,10)
 
-function driverHPMIoptadj(NGauss,NumberUncertain,signu)
+function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
   close all
+  %% NGauss=3,NumberUncertain=3,SignalNoiseMI =10
+  NGauss,NumberUncertain,SignalNoiseMI 
 
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
@@ -29,11 +31,6 @@ function driverHPMIoptadj(NGauss,NumberUncertain,signu)
   betasttd  =  [.3];
   tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
   
-  % quad points
-  NGauss = 3;
-  
-  % noise for data distribution
-  SignalNoiseMI = 10;
   
   %% Variable Setup
   Ntime = 23;
@@ -125,7 +122,6 @@ function driverHPMIoptadj(NGauss,NumberUncertain,signu)
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
   
-      NumberUncertain = 3;
       switch (NumberUncertain)
          case(3)
            [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
@@ -184,7 +180,9 @@ function driverHPMIoptadj(NGauss,NumberUncertain,signu)
       handle = figure(5)
       saveas(handle,sprintf('historyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI ),'png')
       popt.FaList = reshape(designopt(1:end),size(params.FaList ));
-      [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
+      optparams = params;
+      optparams.FaList = popt.FaList;
+      [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
       save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,signu) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
