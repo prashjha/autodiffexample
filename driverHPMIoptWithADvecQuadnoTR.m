@@ -135,10 +135,10 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       TRList = TR_list;
       diffTR = diff(TRList);
   
-      % noise calc for signal sum
-      signu = sum(Mxy(:))/modelSNR;
       % noise calc max signal assuming total signal is sum of gaussian RV
       signu = ((max(Mxy(1,:))+max(Mxy(2,:)))*Ntime)/modelSNR;
+      % noise calc for signal sum
+      signu = sum(Mxy(:))/modelSNR;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
   
