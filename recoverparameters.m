@@ -37,8 +37,8 @@ Nspecies = 2;
 timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)
-  % NOTE - image noise is at the single image - signu is for the sum over time ==> divide by Ntime
-  imagenoise = solnList(jjj).signu/Ntime;
+  % NOTE - image noise is at the single image for single species - signu is for the sum over time for both species ==> divide by Ntime and Nspecies
+  imagenoise = solnList(jjj).signu/Ntime/Nspecies;
   %disp([xroi(jjj),yroi(jjj),zroi(jjj)]);
   timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mz(1,:);
   timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mz(2,:);
