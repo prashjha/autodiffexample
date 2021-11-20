@@ -7,19 +7,52 @@ clear all
 clc
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
+driverHPMIopt(3,3, 2,myoptions)
+driverHPMIopt(3,3, 5,myoptions)
+driverHPMIopt(3,3, 8,myoptions)
 driverHPMIopt(3,3,10,myoptions)
+driverHPMIopt(3,3,12,myoptions)
+driverHPMIopt(3,3,15,myoptions)
+driverHPMIopt(3,3,20,myoptions)
+driverHPMIopt(3,3,22,myoptions)
+driverHPMIopt(3,3,25,myoptions)
+driverHPMIopt(4,3, 2,myoptions)
+driverHPMIopt(4,3, 5,myoptions)
+driverHPMIopt(4,3, 8,myoptions)
 driverHPMIopt(4,3,10,myoptions)
+driverHPMIopt(4,3,12,myoptions)
+driverHPMIopt(4,3,15,myoptions)
+driverHPMIopt(4,3,20,myoptions)
+driverHPMIopt(4,3,22,myoptions)
+driverHPMIopt(4,3,25,myoptions)
 %driverHPMIopt(5,3,10,myoptions)
       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','StepTolerance',1.000000e-16)
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
+driverHPMIopt(3,3, 2,myoptions)
+driverHPMIopt(3,3, 5,myoptions)
+driverHPMIopt(3,3, 8,myoptions)
 driverHPMIopt(3,3,10,myoptions)
+driverHPMIopt(3,3,12,myoptions)
+driverHPMIopt(3,3,15,myoptions)
+driverHPMIopt(3,3,20,myoptions)
+driverHPMIopt(3,3,22,myoptions)
+driverHPMIopt(3,3,25,myoptions)
+driverHPMIopt(4,3, 2,myoptions)
+driverHPMIopt(4,3, 5,myoptions)
+driverHPMIopt(4,3, 8,myoptions)
 driverHPMIopt(4,3,10,myoptions)
+driverHPMIopt(4,3,12,myoptions)
+driverHPMIopt(4,3,15,myoptions)
+driverHPMIopt(4,3,20,myoptions)
+driverHPMIopt(4,3,22,myoptions)
+driverHPMIopt(4,3,25,myoptions)
 %driverHPMIopt(5,3,10,myoptions)
 % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
 function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
 
+  NGauss,NumberUncertain,modelSNR,myoptions.Algorithm
   close all
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
