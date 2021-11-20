@@ -37,8 +37,8 @@ Nspecies = 2;
 timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)
-  % load synthetic data
-  imagenoise = solnList(jjj).signu;
+  % NOTE - image noise is at the single image - signu is for the sum over time ==> divide by Ntime
+  imagenoise = solnList(jjj).signu/Ntime;
   %disp([xroi(jjj),yroi(jjj),zroi(jjj)]);
   timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mz(1,:);
   timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mz(2,:);
