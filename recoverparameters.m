@@ -30,8 +30,6 @@ end
 
 solnList (numsolves) = struct('gp',-1,'snr',-1,'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz);
 
-% load synthetic data
-imagenoise = 7.e-4;
 % extract timehistory info
 num_trials = 25;
 Ntime = 23;
@@ -39,6 +37,8 @@ Nspecies = 2;
 timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)
+  % load synthetic data
+  imagenoise = solnList(jjj).signu;
   %disp([xroi(jjj),yroi(jjj),zroi(jjj)]);
   timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mz(1,:);
   timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mz(2,:);
@@ -74,72 +74,26 @@ plot( TR_list, timehistory(:,1,num_trials+1,1), 'b', ...
       TR_list, timehistory(:,1,num_trials+1,4), 'c', ...
       TR_list, timehistory(:,2,num_trials+1,4), 'c-.')
 title('original data')
-%%
-%%% init params
-%%initT1a = 43;
-%%initT1b = 33;
-%%initKpl = 0.1;
-%%kve = 0.02;
-%%ve = 0.95;
-%%VIF_scale_fact = [jmA0;0];
-%%opts = optimset('lsqcurvefit');
-%%opts.TolFun = 1e-09;
-%%opts.TolX = 1e-09;
-%%opts.Display = 'off';
-%%
-%%%% store soln
-%%storekplopt   = zeros(nroipixel+1,num_trials+1,numel(FAType));
-%%storekveqpopt = zeros(nroipixel+1,num_trials+1,numel(FAType));
-%%storeT1Popt   = zeros(nroipixel+1,num_trials+1,numel(FAType));
-%%storeT1Lopt   = zeros(nroipixel+1,num_trials+1,numel(FAType));
-%%storeA0opt    = zeros(nroipixel+1,num_trials+1,numel(FAType));
-%%%% HACK- @cmwalker code for initial conditions - https://github.com/fuentesdt/TumorHPMRI/blob/master/models/gPC/walker/ShowMxyPub.m
-%%for idesign = 1:numel(FAType)
-%%%for idesign = 1:1
-%%    switch (FAType{idesign})
-%%    case('Const') 
-%%            params = struct('t0',[jmt0;0],'gammaPdfA',[jmalpha;1],'gammaPdfB',[jmbeta;1],...
-%%                'scaleFactor',VIF_scale_fact,'T1s',[initT1a,initT1b],'ExchangeTerms',[0,initKpl;0,0],...
-%%                'TRList',TR_list,'PerfusionTerms',[kve,0],'volumeFractions',ve,...
-%%                'fitOptions', opts);
-%%            params.FaList = 20*pi/180*ones(2,Ntime);
-%%    case('OED') 
-%%            % load oed results
-%%            params = struct('t0',[jmt0;0],'gammaPdfA',[jmalpha;1],'gammaPdfB',[jmbeta;1],...
-%%                'scaleFactor',VIF_scale_fact,'T1s',[initT1a,initT1b],'ExchangeTerms',[0,initKpl;0,0],...
-%%                'TRList',prashantoedresults.opt_res.TRList_opt,'PerfusionTerms',[kve,0],'volumeFractions',ve,...
-%%                'fitOptions', opts);
-%%            params.FaList = prashantoedresults.opt_res.FA_opt;
-%%    end
-%%    %% evaluate walker model
-%%    model = HPKinetics.NewMultiPoolTofftsGammaVIF();
-%%    M0 = [0,0];
-%%    [t_axis,walkerMxy,walkerMz] = model.compile(M0.',params);
-%%    
-%%    % add walker model to data
-%%    timehistory(:,1,nroipixel+1,num_trials+1,idesign) = walkerMz(1,:);
-%%    timehistory(:,2,nroipixel+1,num_trials+1,idesign) = walkerMz(2,:);
-%%    % add noise for num_trials
-%%    for kkk = 1:num_trials
-%%        realchannel = imagenoise *randn(Ntime,1);
-%%        imagchannel = imagenoise *randn(Ntime,1);
-%%        timehistory(:,1,nroipixel+1,kkk,idesign)= timehistory(:,1,nroipixel+1,num_trials+1,idesign) + sqrt( realchannel.^2 + imagchannel.^2); 
-%%        realchannel = imagenoise *randn(Ntime,1);
-%%        imagchannel = imagenoise *randn(Ntime,1);
-%%        timehistory(:,2,nroipixel+1,kkk,idesign)= timehistory(:,2,nroipixel+1,num_trials+1,idesign) + sqrt( realchannel.^2 + imagchannel.^2);  
-%%    end
-%%
-%%    % setup optimization variables
-%%    numberParameters = 2
-%%    switch (numberParameters)
-%%        case(1) 
-%%          kpl = optimvar('kpl','LowerBound',0);
-%%          kveqp =   kve/ ve ;
-%%          T1P = initT1a;
-%%          T1L = initT1b;
-%%          A0  = jmA0;
-%%          % ground truth 
-%%          xstar.kpl        = initKpl;
+
+%% store soln
+storekplopt   = zeros(num_trials+1,length(solnList));
+storekveqpopt = zeros(num_trials+1,length(solnList));
+storeT1Popt   = zeros(num_trials+1,length(solnList));
+storeT1Lopt   = zeros(num_trials+1,length(solnList));
+storeA0opt    = zeros(num_trials+1,length(solnList));
+for idesign = 1:length(solnList)
+
+   % setup optimization variables
+   numberParameters = 2
+   switch (numberParameters)
+       case(1) 
+         kpl = optimvar('kpl','LowerBound',0);
+         kveqp =   kve/ ve ;
+         T1P = initT1a;
+         T1L = initT1b;
+         A0  = jmA0;
+         % ground truth 
+         xstar.kpl        = initKpl;
 %%        case(2) 
 %%          kpl = optimvar('kpl','LowerBound',0);
 %%          kveqp = optimvar('kveqp','LowerBound',0);
@@ -172,10 +126,8 @@ title('original data')
 %%          xstar.T1P        = initT1a;
 %%          xstar.T1L        = initT1b;
 %%          xstar.A0         = initT1b;
-%%    end
-%%    %T1P = initT1a ; 
-%%    %T1L = initT1b ; 
-%%    statevariable  = optimexpr([Nspecies,Ntime]);
+   end
+   statevariable  = optimexpr([Nspecies,Ntime]);
 %%
 %%
 %%    disp('build constraints')
@@ -344,7 +296,7 @@ title('original data')
 %%      end 
 %%    end 
 %%
-%%end 
+end 
 %%
 %%
 %%figure(6)

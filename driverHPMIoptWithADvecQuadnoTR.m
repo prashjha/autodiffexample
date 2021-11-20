@@ -18,7 +18,7 @@ driverHPMIopt(4,3,10,myoptions)
 %driverHPMIopt(5,3,10,myoptions)
 % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
-function driverHPMIopt(NGauss,NumberUncertain,signu,myoptions)
+function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
 
   close all
   %% Tissue Parameters
@@ -135,6 +135,10 @@ function driverHPMIopt(NGauss,NumberUncertain,signu,myoptions)
       TRList = TR_list;
       diffTR = diff(TRList);
   
+      % noise calc for signal sum
+      signu = sum(Mxy(:))/modelSNR;
+      % noise calc max signal assuming total signal is sum of gaussian RV
+      signu = ((max(Mxy(1,:))+max(Mxy(2,:)))*Ntime)/modelSNR;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
   
