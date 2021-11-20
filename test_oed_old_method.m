@@ -118,7 +118,11 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       TRList = TR_list;
       diffTR = diff(TRList);
   
-      signu = SignalNoiseMI ; % TODO - FIXME
+      % noise calc max signal assuming total signal is sum of gaussian RV
+      signu = ((max(Mxy(1,:))+max(Mxy(2,:)))*Ntime)/SignalNoiseMI ;
+      % noise calc for signal sum
+      signu = sum(Mxy(:))/SignalNoiseMI ;
+      params.SignalNoiseMI = signu;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
   
@@ -183,7 +187,7 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       optparams = params;
       optparams.FaList = popt.FaList;
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,signu) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt')
+      save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('adj MI Mxy')

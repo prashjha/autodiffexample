@@ -277,22 +277,22 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       toc;
       % save convergence history
       handle = figure(5)
-      saveas(handle,sprintf('historyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu ),'png')
+      saveas(handle,sprintf('historyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR ),'png')
       % save solution
       optparams = params;
       optparams.FaList = popt.FaList;
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,signu) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt')
+      save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('MI Mxy')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMxyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
+      saveas(handle,sprintf('OptMxyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
       handle = figure(11)
       plot(params.TRList,popt.FaList(1,:)*180/pi,'b',params.TRList,popt.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptFANG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
+      saveas(handle,sprintf('OptFANG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
       handle = figure(12)
       plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
       hold
@@ -304,7 +304,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       end
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMzNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,signu),'png')
+      saveas(handle,sprintf('OptMzNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
   end 
 
 
