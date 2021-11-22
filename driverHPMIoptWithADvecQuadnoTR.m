@@ -168,17 +168,22 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       TRList = TR_list;
       diffTR = diff(TRList);
   
-      % noise calc max signal assuming total signal is sum of gaussian RV
-      signu = ((max(Mxy(1,:))+max(Mxy(2,:)))*Ntime)/modelSNR;
       % noise calc for signal sum
-      signu = sum(Mxy(:))/modelSNR;
+      %    modelSNR = (maxsignallac + maxsignalpyr)/(stdsignalpyr +stdsignallac  )
+      %             = (maxsignallac + maxsignalpyr)/(2 * signuImage )
+      %
+      % image level ==> signuImage = (maxsignallac + maxsignalpyr)/2/modelSNR 
+      % signal sum  ==> signu = Ntime * signuImage 
+      % noise calc max signal assuming total signal is sum of gaussian RV
+      signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
+      signu = Ntime * signuImage;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
   
       switch (NumberUncertain)
          case(3)
            [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
-           T1Pqp   = T1pmean;
+           
            T1Lqp   = T1lmean;
            kplqp   = xn{1}(:);
            klpqp   =    0 ;     % @cmwalker where do I get this from ? 
