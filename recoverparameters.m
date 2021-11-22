@@ -84,16 +84,16 @@ storeA0opt    = zeros(num_trials+1,length(solnList));
 for idesign = 1:length(solnList)
 
    % setup optimization variables
-   numberParameters = 2
+   numberParameters = 1
    switch (numberParameters)
        case(1) 
          kpl = optimvar('kpl','LowerBound',0);
-         kveqp =   kve/ ve ;
-         T1P = initT1a;
-         T1L = initT1b;
-         A0  = jmA0;
+         kveqp = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
+         T1P = solnList(idesign ).params.T1s(1);
+         T1L = solnList(idesign ).params.T1s(2);
+         A0  = solnList(idesign ).params.scaleFactor(1);
          % ground truth 
-         xstar.kpl        = initKpl;
+         xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2);
 %%        case(2) 
 %%          kpl = optimvar('kpl','LowerBound',0);
 %%          kveqp = optimvar('kveqp','LowerBound',0);
