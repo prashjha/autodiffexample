@@ -15,7 +15,7 @@ gpList = [3]
 uncertainList = [3]
 snrList = [2,10,25]
 numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) +1
-solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signu',[]);
+solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[]);
 icount  = 0;
 for isolver = 1:numel(solverType)
  for igp = 1:length(gpList)
@@ -23,13 +23,13 @@ for isolver = 1:numel(solverType)
    for isnr = 1:length(snrList)
       worktmp = load(sprintf('poptNG%dNu%d%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},snrList(isnr)));
       icount= icount+1;
-      solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyopt, 'Mz',worktmp.Mzopt,'signu',worktmp.signu);
+      solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyopt, 'Mz',worktmp.Mzopt,'signuImage',worktmp.signuImage);
    end
   end
  end
 end
 
-solnList (numsolves) = struct('gp',-1,'snr',-1,'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signu',worktmp.signu);
+solnList (numsolves) = struct('gp',-1,'snr',-1,'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',worktmp.signuImage);
 
 % extract timehistory info
 num_trials = 25;
@@ -39,7 +39,7 @@ timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)
   % NOTE - image noise is at the single image for single species - signu is for the sum over time for both species ==> divide by Ntime and Nspecies
-  imagenoise = solnList(jjj).signu/Ntime/Nspecies;
+  imagenoise = solnList(jjj).signuImage;
   %disp([xroi(jjj),yroi(jjj),zroi(jjj)]);
   timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mz(1,:);
   timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mz(2,:);

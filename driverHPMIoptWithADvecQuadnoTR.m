@@ -168,7 +168,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       TRList = TR_list;
       diffTR = diff(TRList);
   
-      % noise calc for signal sum
+      % noise calc for signal sum - assume same noise in pyruvate and lactate image
       %    modelSNR = (maxsignallac + maxsignalpyr)/(stdsignalpyr +stdsignallac  )
       %             = (maxsignallac + maxsignalpyr)/(2 * signuImage )
       %
@@ -320,7 +320,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       optparams = params;
       optparams.FaList = popt.FaList;
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu')
+      save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('MI Mxy')
