@@ -211,7 +211,7 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       optparams = params;
       optparams.FaList = popt.FaList;
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt')
+      save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('adj MI Mxy')
