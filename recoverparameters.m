@@ -14,6 +14,7 @@ gpList = [3, 4,5]
 gpList = [3]
 uncertainList = [3]
 snrList = [2,10,25]
+snrList = [2,10]
 numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) +1
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[]);
 icount  = 0;
@@ -175,7 +176,7 @@ for idesign = 1:length(solnList)
    %  for idtrial = num_trials+1:num_trials+1
    for idtrial = 1:num_trials 
        tic;
-       disp(sprintf('pixel = %d, trial = %d',idesign, idtrial )); solnList(idesign)
+       disp(sprintf('design = %d, trial = %d',idesign, idtrial )); solnList(idesign)
        mycostfcn = sum( (statevariable(1,:)'- timehistory(:,1,idtrial,idesign ) ).^2) + sum( (statevariable(2,:)'- timehistory(:,2,idtrial,idesign ) ).^2);
 
        disp('create optim prob')
@@ -215,7 +216,7 @@ for idesign = 1:length(solnList)
             x0.A0         = unifrnd(1  ,100);
        end
        initialstate = evaluate(statevariable ,x0);
-       [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'solver','lsqnonlin' )
+       [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'solver','lsqnonlin' , 'ObjectiveDerivative', 'finite-differences')
        switch (numberParameters)
           case(1) 
             storekplopt(  idtrial,idesign)  = popt.kpl;
@@ -269,9 +270,12 @@ for idesign = 1:length(solnList)
 end 
 %%
 %%
+idplot = (num_trials+1)* length(solnList)+1;
+figure(idplot )
+boxplot( [storekplopt(1:num_trials,1),  storekplopt(1:num_trials,2),  storekplopt(1:num_trials,3)], {'adj','adj1','const'} )
+
 %%figure(6)
 %%disp([ mean(storekplopt(:,:,1),2) var(storekplopt(:,:,1),0,2) mean(storekplopt(:,:,2),2) var(storekplopt(:,:,2),0,2) ])
 %%disp([ var(storekplopt(nroipixel:nroipixel+1,1:num_trials,1),0,2) var(storekplopt(nroipixel:nroipixel+1,1:num_trials,2),0,2) ])
-%%    
-%%boxplot( [storekplopt(nroipixel+1,1:num_trials,1)',  storekplopt(nroipixel+1,1:num_trials,2)'], FAType)
-%%
+    
+

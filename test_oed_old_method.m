@@ -149,7 +149,7 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       % image level ==> signuImage = (maxsignallac + maxsignalpyr)/2/modelSNR 
       % signal sum  ==> signu = Ntime * signuImage 
       % noise calc max signal assuming total signal is sum of gaussian RV
-      signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
+      signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/SignalNoiseMI ;
       signu = Ntime * signuImage;
       params.SignalNoiseMI = signu;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
