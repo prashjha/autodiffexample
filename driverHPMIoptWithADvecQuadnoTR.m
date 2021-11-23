@@ -183,7 +183,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       switch (NumberUncertain)
          case(3)
            [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
-           
+           T1Pqp   = T1pmean;
            T1Lqp   = T1lmean;
            kplqp   = xn{1}(:);
            klpqp   =    0 ;     % @cmwalker where do I get this from ? 
