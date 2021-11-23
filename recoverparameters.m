@@ -269,7 +269,18 @@ end
 %%
 idplot = (num_trials+1)* length(solnList)+1;
 figure(idplot )
-boxplot( [storekplopt(1:num_trials,1),  storekplopt(1:num_trials,2),  storekplopt(1:num_trials,3)], {'adj','adj1','const'} )
+labellist = sprintfc('snr%02d',snrList); labellist{end+1} = 'const'
+boxplot( [ storekplopt(1:num_trials,1:length(snrList)), storekplopt(1:num_trials,end)], labellist  )
+
+idplot = idplot+1
+figure(idplot )
+inversevar = var(storekplopt(1:num_trials,:),0,1)
+plot( snrList , inversevar(0*length(snrList)+1:1*length(snrList)), 'b',...
+      snrList , inversevar(1*length(snrList)+1:2*length(snrList)), 'r',... 
+      snrList , inversevar(2*length(snrList)+1:3*length(snrList)), 'k') 
+hold
+yline(inversevar (end))
+legend('walker+rice','','walker','','ic','','truth','','df','')
 
 %%figure(6)
 %%disp([ mean(storekplopt(:,:,1),2) var(storekplopt(:,:,1),0,2) mean(storekplopt(:,:,2),2) var(storekplopt(:,:,2),0,2) ])
