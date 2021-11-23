@@ -77,17 +77,17 @@ storekplopt   = zeros(num_trials+1,length(solnList));
 storekveqpopt = zeros(num_trials+1,length(solnList));
 storeT1Popt   = zeros(num_trials+1,length(solnList));
 storeT1Lopt   = zeros(num_trials+1,length(solnList));
-storeA0opt    = zeros(num_trials+1,length(solnList));
+storet0opt    = zeros(num_trials+1,length(solnList));
 for idesign = 1:length(solnList)
    % setup optimization variables
-   numberParameters = 1
+   numberParameters = 3
    switch (numberParameters)
        case(1) 
          kpl   = optimvar('kpl','LowerBound',0);
          kveqp = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
          T1P   = solnList(idesign ).params.T1s(1);
          T1L   = solnList(idesign ).params.T1s(2);
-         A0    = solnList(idesign ).params.scaleFactor(1);
+         t0    = solnList(idesign ).params.t0(1);
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2);
        case(2) 
@@ -95,16 +95,26 @@ for idesign = 1:length(solnList)
          kveqp = optimvar('kveqp','LowerBound',0);
          T1P   = solnList(idesign ).params.T1s(1);        
          T1L   = solnList(idesign ).params.T1s(2);        
-         A0    = solnList(idesign ).params.scaleFactor(1);
+         t0    = solnList(idesign ).params.t0(1);
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2); 
          xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions; 
+       case(3) 
+         kpl   = optimvar('kpl','LowerBound',0);
+         kveqp = optimvar('kveqp','LowerBound',0);
+         t0  = optimvar('t0' ,'LowerBound',0);
+         T1P   = solnList(idesign ).params.T1s(1);        
+         T1L   = solnList(idesign ).params.T1s(2);        
+         % ground truth 
+         xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2); 
+         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions; 
+         xstar.t0         = solnList(idesign ).params.t0(1);
        case(4) 
          kpl   = optimvar('kpl','LowerBound',0);
          kveqp = optimvar('kveqp','LowerBound',0);
          T1P   = optimvar('T1P','LowerBound',0);
          T1L   = optimvar('T1L','LowerBound',0);
-         A0    = solnList(idesign ).params.scaleFactor(1);
+         t0    = solnList(idesign ).params.t0(1);
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2);
          xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
@@ -115,18 +125,19 @@ for idesign = 1:length(solnList)
          kveqp = optimvar('kveqp','LowerBound',0);
          T1P = optimvar('T1P','LowerBound',0);
          T1L = optimvar('T1L','LowerBound',0);
-         A0  = optimvar('A0' ,'LowerBound',0);
+         t0  = optimvar('t0' ,'LowerBound',0);
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2); 
          xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
          xstar.T1P        = solnList(idesign ).params.T1s(1);        
          xstar.T1L        = solnList(idesign ).params.T1s(2);        
-         xstar.A0         = solnList(idesign ).params.scaleFactor(1);
+         xstar.t0         = solnList(idesign ).params.t0(1);
    end
    statevariable  = optimexpr([Nspecies,Ntime]);
 
 
    disp('build constraints')
+   A0    = solnList(idesign ).params.scaleFactor(1);
    statevariable(:,1 )=0;
    for iii = 1:Ntime-1
      disp([Nspecies*(iii-1)+1 , Nspecies*(iii-1)+2 ,Ntime* Nspecies])
@@ -136,7 +147,7 @@ for idesign = 1:length(solnList)
      nsubstep = 5;
      deltat = currentTR /nsubstep ;
      integratedt = [solnList(idesign ).params.TRList(iii):deltat:solnList(idesign ).params.TRList(iii+1)] +deltat/2  ;
-     integrand = A0 *gampdf(integratedt(1:nsubstep )'-solnList(idesign ).params.t0(1),solnList(idesign ).params.gammaPdfA(1),solnList(idesign ).params.gammaPdfB(1)) ;
+     integrand = fcn2optimexpr(@(bolusstart)A0*gampdf(integratedt(1:nsubstep )'- bolusstart ,solnList(idesign ).params.gammaPdfA(1),solnList(idesign ).params.gammaPdfB(1)) ,t0);
      % >> syms a  kpl d currentTR    T1P kveqp T1L 
      % >> expATR = expm([a,  0; kpl, d ] * currentTR )
      % 
@@ -198,6 +209,10 @@ for idesign = 1:length(solnList)
           case(2) 
             x0.kpl        = unifrnd(.01,10);
             x0.kveqp      = unifrnd(.02,10);
+          case(3) 
+            x0.kpl        = unifrnd(.01,10);
+            x0.kveqp      = unifrnd(.02,10);
+            x0.t0         = unifrnd(0  ,8);
           case(4) 
             x0.kpl        = unifrnd(.01,10);
             x0.kveqp      = unifrnd(.02,10);
@@ -208,7 +223,7 @@ for idesign = 1:length(solnList)
             x0.kveqp      = unifrnd(.02,10);
             x0.T1P        = unifrnd(20 ,40);
             x0.T1L        = unifrnd(15 ,35);
-            x0.A0         = unifrnd(1  ,100);
+            x0.t0         = unifrnd(0  ,8);
        end
        initialstate = evaluate(statevariable ,x0);
        [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'solver','lsqnonlin' , 'ObjectiveDerivative', 'finite-differences')
@@ -218,25 +233,31 @@ for idesign = 1:length(solnList)
             storekveqpopt(idtrial,idesign)  = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
             storeT1Popt(  idtrial,idesign)  = solnList(idesign ).params.T1s(1);
             storeT1Lopt(  idtrial,idesign)  = solnList(idesign ).params.T1s(2);
-            storeA0opt (  idtrial,idesign)  = solnList(idesign ).params.scaleFactor(1);                                               
+            storet0opt (  idtrial,idesign)  = solnList(idesign ).params.t0(1);
           case(2) 
             storekplopt(  idtrial,idesign)  = popt.kpl;
             storekveqpopt(idtrial,idesign)  = popt.kveqp;
             storeT1Popt(  idtrial,idesign)  = solnList(idesign ).params.T1s(1); 
             storeT1Lopt(  idtrial,idesign)  = solnList(idesign ).params.T1s(2); 
-            storeA0opt (  idtrial,idesign)  = solnList(idesign ).params.scaleFactor(1);
+            storet0opt (  idtrial,idesign)  = solnList(idesign ).params.t0(1);
+          case(3) 
+            storekplopt(  idtrial,idesign)  = popt.kpl;
+            storekveqpopt(idtrial,idesign)  = popt.kveqp;
+            storeT1Popt(  idtrial,idesign)  = solnList(idesign ).params.T1s(1); 
+            storeT1Lopt(  idtrial,idesign)  = solnList(idesign ).params.T1s(2); 
+            storet0opt (  idtrial,idesign)  = popt.t0 ; 
           case(4) 
             storekplopt(  idtrial,idesign)  = popt.kpl;
             storekveqpopt(idtrial,idesign)  = popt.kveqp;
             storeT1Popt(  idtrial,idesign)  = popt.T1P;
             storeT1Lopt(  idtrial,idesign)  = popt.T1L;
-            storeA0opt (  idtrial,idesign)  = solnList(idesign ).params.scaleFactor(1);
+            storet0opt (  idtrial,idesign)  = solnList(idesign ).params.t0(1);
           case(5) 
             storekplopt(  idtrial,idesign)  = popt.kpl;
             storekveqpopt(idtrial,idesign)  = popt.kveqp;
             storeT1Popt(  idtrial,idesign)  = popt.T1P;
             storeT1Lopt(  idtrial,idesign)  = popt.T1L;
-            storeA0opt (  idtrial,idesign)  = popt.A0 ; 
+            storet0opt (  idtrial,idesign)  = popt.t0 ; 
        end
        slnstate = evaluate(statevariable ,popt);
 
@@ -280,7 +301,7 @@ plot( snrList , inversevar(0*length(snrList)+1:1*length(snrList)), 'b',...
       snrList , inversevar(2*length(snrList)+1:3*length(snrList)), 'k') 
 hold
 yline(inversevar (end))
-legend('walker+rice','','walker','','ic','','truth','','df','')
+legend(solverType )
 
 %%figure(6)
 %%disp([ mean(storekplopt(:,:,1),2) var(storekplopt(:,:,1),0,2) mean(storekplopt(:,:,2),2) var(storekplopt(:,:,2),0,2) ])

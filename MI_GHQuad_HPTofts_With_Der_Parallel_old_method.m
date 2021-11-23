@@ -67,10 +67,10 @@ parfor iii=1:lqp
             
             Gkkk = Mmodel(kkk)';
             
-            f = wn(kkk) * mvnpdf(znu+Giii, Gkkk,covnu);
+            f = wn(kkk) * mvnpdf(znu*sqrt(2)*signu+Giii, Gkkk,covnu);
             lntermtmp=lntermtmp + f;
             % for derivative
-            fact_der = (Gkkk - Giii - znu)/covnu;
+            fact_der = (Gkkk - Giii - znu*sqrt(2)*signu)/covnu;
             dTR(:,:) = dTR(:,:) + f * fact_der * (MmodeldGdTR(:,:,iii) - MmodeldGdTR(:,:,kkk));
             dFA(:,:) = dFA(:,:) + f * fact_der * (MmodeldGdFA(:,:,iii) - MmodeldGdFA(:,:,kkk));
         end
