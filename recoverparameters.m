@@ -3,18 +3,13 @@ close all
 clc
 
 
-%% Choose Excitation Angle
-FAType = {'OED','Const'};
-idoed = 1;
-idcst = 2;
-
-solverType = {'adj','sqp','interior-point'};
 solverType = {'adj'};
+solverType = {'adj','sqp','interior-point'};
 gpList = [3, 4,5]
-gpList = [3]
+gpList = [4]
 uncertainList = [3]
-snrList = [2,10,25]
 snrList = [2,10]
+snrList = [2,10,25]
 numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) +1
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[]);
 icount  = 0;
@@ -174,7 +169,7 @@ for idesign = 1:length(solnList)
    % Create an optimization problem using these converted optimization expressions.
    disp('build objective function')
    %  for idtrial = num_trials+1:num_trials+1
-   for idtrial = 1:num_trials 
+   for idtrial = 1:num_trials+1
        tic;
        disp(sprintf('design = %d, trial = %d',idesign, idtrial )); solnList(idesign)
        mycostfcn = sum( (statevariable(1,:)'- timehistory(:,1,idtrial,idesign ) ).^2) + sum( (statevariable(2,:)'- timehistory(:,2,idtrial,idesign ) ).^2);
@@ -185,7 +180,7 @@ for idesign = 1:length(solnList)
        % View the new problem.
        
        %show(convprob)
-       problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjectiveRecover');
+       % problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjectiveRecover');
        %% 
        % Solve the new problem. The solution is essentially the same as before.
        
@@ -245,6 +240,7 @@ for idesign = 1:length(solnList)
        end
        slnstate = evaluate(statevariable ,popt);
 
+       if idtrial >= num_trials 
        % plot
        idplot = (num_trials+1)*(idesign-1) + idtrial ;
        figure(idplot )
@@ -263,6 +259,7 @@ for idesign = 1:length(solnList)
        title('curvefit ')
        legend('walker+rice','','walker','','ic','','truth','','df','')
        pause(.1)
+       end 
 
        toc;
    end 
