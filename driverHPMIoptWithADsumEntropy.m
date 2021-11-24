@@ -271,7 +271,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
         for kkk  =1:Ntime 
            diffsummone = (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:)))  * expandvar   - expandvar' * (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:))') ;
            diffsummtwo = (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:)))  * expandvar   - expandvar' * (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:))') ;
-           Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(sqrt(2)*signuImage*znu + diffsummone).^2/2/signuImage^2   - (sqrt(2)*signuImage*znu + diffsummtwo).^2/2/signuImage^2  ) * wn(:)));
+           Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signuImage^2   - (znu + diffsummtwo).^2/2/signuImage^2  ) * wn(:)));
         end
       end
       MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 

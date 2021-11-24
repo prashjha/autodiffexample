@@ -287,7 +287,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       for jjj=1:lqp2
         znu=xn2{1}(jjj) ;
         %Hz = Hz + wn2(jjj) * (wn(lqpchoosetwo(:,1))' * log(exp(-(znu + diffsummone').^2/sqrt(2)/signu   - (znu + diffsummtwo').^2/sqrt(2)/signu  ).* wn(lqpchoosetwo(:,2))));
-        Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(sqrt(2)*signu*znu + diffsummone).^2/2/signu^2   - (sqrt(2)*signu*znu + diffsummtwo).^2/2/signu^2  ) * wn(:)));
+        Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signu^2   - (znu + diffsummtwo).^2/2/signu^2  ) * wn(:)));
       end
       MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
   
