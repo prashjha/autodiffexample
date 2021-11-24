@@ -4,7 +4,7 @@ clc
 
 
 solverType = {'adj'};
-solverType = {'adj','sqp','interior-point'};
+solverType = {'sumsqp','suminterior-point','adj','sqp','interior-point'};
 gpList = [3, 4,5]
 gpList = [4]
 uncertainList = [3]
