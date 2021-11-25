@@ -10,6 +10,7 @@ gpList = [4]
 uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
+snrList = [2,5,10,15,20,25]
 numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + length(snrList)
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[]);
 icount  = 0;
@@ -85,7 +86,7 @@ storeT1Lopt   = zeros(num_trials+1,length(solnList));
 storet0opt    = zeros(num_trials+1,length(solnList));
 for idesign = 1:length(solnList)
    % setup optimization variables
-   numberParameters = 3
+   numberParameters = 1
    switch (numberParameters)
        case(1) 
          kpl   = optimvar('kpl','LowerBound',0);
@@ -298,15 +299,35 @@ figure(idplot )
 labellist = sprintfc('snr%02d',snrList); labellist{end+1} = 'const'
 boxplot( [ storekplopt(1:num_trials,1:length(snrList)), storekplopt(1:num_trials,end)], labellist  )
 
+%   Various line types, plot symbols and colors may be obtained with
+%   PLOT(X,Y,S) where S is a character string made from one element
+%   from any or all the following 3 columns:
+%          b     blue          .     point              -     solid
+%          g     green         o     circle             :     dotted
+%          r     red           x     x-mark             -.    dashdot
+%          c     cyan          +     plus               --    dashed
+%          m     magenta       *     star             (none)  no line
+%          y     yellow        s     square
+%          k     black         d     diamond
+%          w     white         v     triangle (down)
+%                              ^     triangle (up)
+%                              <     triangle (left)
+%                              >     triangle (right)
+%                              p     pentagram
+%                              h     hexagram
+
 idplot = idplot+1
 figure(idplot )
 inversevar = var(storekplopt(1:num_trials,:),0,1)
 plot( snrList , inversevar(0*length(snrList)+1:1*length(snrList)), 'b',...
-      snrList , inversevar(1*length(snrList)+1:2*length(snrList)), 'r',... 
-      snrList , inversevar(2*length(snrList)+1:3*length(snrList)), 'k') 
-hold
-yline(inversevar (end))
-legend(solverType )
+      snrList , inversevar(1*length(snrList)+1:2*length(snrList)), 'g',... 
+      snrList , inversevar(2*length(snrList)+1:3*length(snrList)), 'r',... 
+      snrList , inversevar(3*length(snrList)+1:4*length(snrList)), 'c',... 
+      snrList , inversevar(4*length(snrList)+1:5*length(snrList)), 'm',... 
+      snrList , inversevar(length(solverType)*length(snrList)+1:end), 'k') 
+legendList = solverType 
+legendList(end+1) = {'const'} 
+legend(legendList)
 
 %%figure(6)
 %%disp([ mean(storekplopt(:,:,1),2) var(storekplopt(:,:,1),0,2) mean(storekplopt(:,:,2),2) var(storekplopt(:,:,2),0,2) ])
