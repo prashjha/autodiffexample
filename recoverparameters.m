@@ -10,7 +10,7 @@ gpList = [4]
 uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
-numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) +1
+numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + length(snrList)
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[]);
 icount  = 0;
 for isolver = 1:numel(solverType)
@@ -25,7 +25,12 @@ for isolver = 1:numel(solverType)
  end
 end
 
-solnList (numsolves) = struct('gp',-1,'snr',-1,'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',worktmp.signuImage,'signu',worktmp.signu);
+% compute variance for each SNR
+for isnr = 1:length(snrList)
+   icount= icount+1;
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
+end
+
 
 % extract timehistory info
 num_trials = 25;
