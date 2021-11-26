@@ -86,7 +86,7 @@ storeT1Lopt   = zeros(num_trials+1,length(solnList));
 storet0opt    = zeros(num_trials+1,length(solnList));
 for idesign = 1:length(solnList)
    % setup optimization variables
-   numberParameters = 1
+   numberParameters = 3
    switch (numberParameters)
        case(1) 
          kpl   = optimvar('kpl','LowerBound',0);
@@ -317,7 +317,7 @@ boxplot( [ storekplopt(1:num_trials,1:length(snrList)), storekplopt(1:num_trials
 %                              h     hexagram
 
 idplot = idplot+1
-figure(idplot )
+handle = figure(idplot )
 inversevar = var(storekplopt(1:num_trials,:),0,1)
 plot( snrList , inversevar(0*length(snrList)+1:1*length(snrList)), 'b',...
       snrList , inversevar(1*length(snrList)+1:2*length(snrList)), 'g',... 
@@ -328,6 +328,7 @@ plot( snrList , inversevar(0*length(snrList)+1:1*length(snrList)), 'b',...
 legendList = solverType 
 legendList(end+1) = {'const'} 
 legend(legendList)
+saveas(handle,sprintf('solversummaryNP%d',numberParameters),'png')
 
 %%figure(6)
 %%disp([ mean(storekplopt(:,:,1),2) var(storekplopt(:,:,1),0,2) mean(storekplopt(:,:,2),2) var(storekplopt(:,:,2),0,2) ])
