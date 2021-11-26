@@ -8,7 +8,7 @@ close all
 clc
 N_vect = round(linspace(5,60,15));
 %% Variable Setup
-Ntime = 3;
+Ntime = 23;
 TR = 2;
 TR_list = (0:(Ntime-1))*TR;
 T1a = 43;
@@ -125,19 +125,22 @@ if optf
     % setup optimization variables
     Nspecies = 2
     FaList = optimvar('FaList',2,Ntime);
-    TRList = optimvar('TRList',1,Ntime);
-    diffTR = diff(TRList);
-    NGauss  = 2
+    TRList = TR_list;
+    NGauss  = 3
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     lqp=length(xn{1}(:));
-    statevariable  = optimexpr([Nspecies,Ntime,lqp]);
+    statevariable    = optimvar('state',Nspecies,Ntime,lqp);
+    stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
 
-    signu = 10 ; % TODO - FIXME
+    modelSNR = 10 ; % TODO - FIXME
+    signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
+    signu = Ntime * signuImage;
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
 
     disp('build state variable')
+    stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
     for iqp = 1:lqp
       for iii = 1:Ntime-1
         % disp([Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1 , Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2 ,Ntime* Nspecies* lqp])
@@ -151,7 +154,7 @@ if optf
         %% expATR = V*[exp(D(1,1)*1.4) 0 ; 0 exp(D(2,2)*1.4)]*V^-1;
         %% aifterm =  kveqp *(designvariable(3,iii+1)- designvariable(3,iii))* ( [jmA0 * (designvariable(3,iii+1)- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii+1)- jmt0 )/jmbeta);0] +  expATR * [jmA0 * (designvariable(3,iii  )- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii  )- jmt0 )/jmbeta);0])/2;
         %% governeqns(Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1:Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2) = statevariable(:,iii+1,iqp ) -  expATR *statevariable(:,iii,iqp )   + aifterm       == 0;
-        currentTR = diffTR(iii);
+        currentTR = TR ;
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
         %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
@@ -181,43 +184,31 @@ if optf
         % mid-point rule integration
         aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
     (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ;
-        statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp ))   + aifterm ;
-        %statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp )) ;
-        statevariable(:,iii+1,iqp) =  cos(FaList(:,iii+1)).* statevariable(:,iii+1,iqp);
+        stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii+1)).*  statevariable(:,iii,iqp ))   + aifterm ;
       end
     end
 
     disp('build objective function')
-    sumstatevariable = squeeze(sum(statevariable,2));
+    sumstatevariable = optimexpr([Nspecies,lqp]);
+    for jjj = 1:lqp
+       sumstatevariable(:,jjj) =  sum(sin(FaList).*statevariable(:,:,jjj),2);
+    end 
     %statematrix = optimexpr([lqp,lqp]);
-    diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
-    diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
+    expandvar  = ones(1,lqp);
+    diffsummone = sumstatevariable(1,:)' * expandvar   - expandvar' * sumstatevariable(1,:);
+    diffsummtwo = sumstatevariable(2,:)' * expandvar   - expandvar' * sumstatevariable(2,:);
     Hz = 0;
     for jjj=1:lqp2
       znu=xn2{1}(jjj) ;
       Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/sqrt(2)/signu   - (znu + diffsummtwo).^2/sqrt(2)/signu  ) * wn(:)));
     end
-    %% Hz = 0;
-    %% for iii=1:lqp
-    %%     for jjj=1:lqp2
-    %%         znu=xn2{1}(jjj) ;
-    %%         lntermtmp=0;
-    %%         for kkk=1:lqp
-    %%             lntermtmp=lntermtmp + wn(kkk) * exp(-(znu+sum(statevariable(1,:,iii))- sum(statevariable(1,:,kkk)))^2/sqrt(2)/signu);
-    %%             lntermtmp=lntermtmp + wn(kkk) * exp(-(znu+sum(statevariable(2,:,iii))- sum(statevariable(2,:,kkk)))^2/sqrt(2)/signu);
-    %%         end
-    %%         % for function
-    %%         lnterm = log(lntermtmp)+log(pi^(-1.5));
-    %%         Hz = Hz + wn(iii) * wn2(jjj) * lnterm;
-    %%     end
-    %% end
     MIGaussObj = -pi^(-1.5-2.5)*Hz; 
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
-    convprob = optimproblem('Objective',MIGaussObj );
+    convprob = optimproblem('Objective',MIGaussObj , "Constraints",stateconstraint);
     %% 
     % View the new problem.
     
@@ -227,15 +218,15 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.TRList = params.TRList; 
-    myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
+    x0.state  = repmat( Mz./cos(params.FaList) ,1,1,lqp);
+    %x0.state  = repmat(1/scalestate * ( Mz./cos(params.FaList))',1,1,lqp);
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
 
     toc;
 
-    params.TRList = popt.TRList;
     params.FaList = popt.FaList;
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
     figure(4)
