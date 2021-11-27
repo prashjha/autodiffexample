@@ -222,9 +222,20 @@ if optf
     ylabel('MI Mxy')
     xlabel('sec')
     figure(7)
-    plot(optparams.TRList,optparams.FaList(1,:),'b',optparams.TRList,optparams.FaList(2,:),'k')
+    plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b',optparams.TRList,optparams.FaList(2,:)*180/pi,'k')
     ylabel('MI FA')
     xlabel('sec')
+    handle = figure(8)
+    plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
+    hold
+    plot(optparams.TRList,scalestate* popt.state(1,:, 1),'b',optparams.TRList,scalestate* popt.state(2,:, 1),'k')
+    if(lqp > 1)
+      plot(optparams.TRList,scalestate* popt.state(1,:, 5),'b',optparams.TRList,scalestate* popt.state(2,:, 5),'k')
+      plot(optparams.TRList,scalestate* popt.state(1,:,10),'b',optparams.TRList,scalestate* popt.state(2,:,10),'k')
+      plot(optparams.TRList,scalestate* popt.state(1,:,15),'b',optparams.TRList,scalestate* popt.state(2,:,15),'k')
+    end
+    ylabel('MI Mz ')
+    xlabel('sec'); legend('Pyr','Lac')
 end 
 
 
