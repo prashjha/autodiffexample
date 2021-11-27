@@ -93,7 +93,7 @@ if plotinit
     jmbeta  = 4.5
     jmt0    = 0
     jmaif   = jmA0  * gampdf(TR_list - jmt0  , jmalpha , jmbeta);
-    figure(20)
+    figure(4)
     plot(TR_list,jmaif ,'b')
     ylabel('aif')
     xlabel('sec')
@@ -129,8 +129,12 @@ if optf
     NGauss  = 3
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     lqp=length(xn{1}(:));
-    statevariable    = optimvar('state',Nspecies,Ntime,lqp);
+    statevariable = optimvar('state',Nspecies,Ntime,lqp);
     stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
+    % scaling important for the optimizaiton step length update
+    scalestate = 1.e-2;
+    %statevariable =scalestate * statevariableraw;
+  
 
     modelSNR = 10 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
@@ -149,18 +153,13 @@ if optf
         kplqp = xn{3}(iqp);
         klpqp =    0 ;     % @cmwalker where do I get this from ? 
         kveqp = xn{4}(iqp);
-        %% A = [-1/T1Pqp - kplqp - kveqp,  klpqp; kplqp, -1/T1Lqp - klpqp];
-        %% [V,D] = eig(A);
-        %% expATR = V*[exp(D(1,1)*1.4) 0 ; 0 exp(D(2,2)*1.4)]*V^-1;
-        %% aifterm =  kveqp *(designvariable(3,iii+1)- designvariable(3,iii))* ( [jmA0 * (designvariable(3,iii+1)- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii+1)- jmt0 )/jmbeta);0] +  expATR * [jmA0 * (designvariable(3,iii  )- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii  )- jmt0 )/jmbeta);0])/2;
-        %% governeqns(Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1:Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2) = statevariable(:,iii+1,iqp ) -  expATR *statevariable(:,iii,iqp )   + aifterm       == 0;
+        %
         currentTR = TR ;
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
-        %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
-        % TODO - FIXME - more elegant way ?
-        integratedt = [TRList(iii)+deltat/2, TRList(iii)+3*deltat/2,TRList(iii)+5*deltat/2,TRList(iii)+7*deltat/2,TRList(iii)+9*deltat/2,TRList(iii)+11*deltat/2]  ;
-        integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-jmt0,jmalpha,jmbeta) ;
+        % setup AIF
+        integratedt =TRList(iii)+ [1:2:2*nsubstep+1]*deltat/2;
+        integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-jmt0,jmalpha,jmbeta) ;
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )
         % 
@@ -178,13 +177,11 @@ if optf
         % [                                                              exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0]
         % [(kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)]
         %    
-        %expATR = fcn2optimexpr(@expm,A*currentTR );
-        % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
         expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
         % mid-point rule integration
         aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
     (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ;
-        stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii+1)).*  statevariable(:,iii,iqp ))   + aifterm ;
+        stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii)).*  statevariable(:,iii,iqp ))   + aifterm ;
       end
     end
 
@@ -218,23 +215,25 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.state  = repmat( Mz./cos(params.FaList) ,1,1,lqp);
-    %x0.state  = repmat(1/scalestate * ( Mz./cos(params.FaList))',1,1,lqp);
+    x0.state  = repmat( Mz./cos(params.FaList),1,1,lqp);
+    % truthconstraint = infeasibility(stateconstraint,x0);
     myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
 
     toc;
+    handle = figure(5)
 
-    params.FaList = popt.FaList;
+    optparams = params;
+    optparams.FaList = popt.FaList;
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    figure(4)
-    plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
+    figure(6)
+    plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
     xlabel('sec')
-    figure(5)
-    plot(params.TRList,params.FaList(1,:),'b',params.TRList,params.FaList(2,:),'k')
+    figure(7)
+    plot(optparams.TRList,optparams.FaList(1,:),'b',optparams.TRList,optparams.FaList(2,:),'k')
     ylabel('MI FA')
     xlabel('sec')
 end 
