@@ -12,15 +12,17 @@ T1pmean = [ 30 ]; % s
 T1pstdd = [ 10 ]; % s
 T1lmean = [ 25 ]; % s
 T1lstdd = [ 10 ]; % s
-kplmean = [ 5 ];       % s
-kplstdd = [ 5 ];       % s
-kvemean = [ 0.15 ];       % s
-kvestdd = [ .05  ];       % s
+kplmean = [ .15 ];       % s
+kplstdd = [ .03 ];       % s
+kvemean = [ 0.05 ];       % s
+kvestdd = [ .01  ];       % s
 t0mean  = [ 4    ];       % s
 t0sttd  = [ 1.3  ] ;       % s
 alphamean  =  [2.5];
+alphasttd  =  [.3];
 betamean  =  [4.5];
-tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd];
+betasttd  =  [.3];
+tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
 
 %% Variable Setup
 Ntime = 23;
@@ -116,9 +118,14 @@ if optf
     Nspecies = 2
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
-    NGauss  = 3
-    NumberUncertain=4;
-    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+    NGauss  = 4
+    NumberUncertain=3;
+    switch (NumberUncertain)
+       case(3)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+       case(4)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+    end 
     lqp=length(xn{1}(:));
     statevariable = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
     stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
@@ -136,19 +143,29 @@ if optf
     stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
     for iqp = 1:lqp
       for iii = 1:Ntime-1
-        % disp([Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1 , Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2 ,Ntime* Nspecies* lqp])
-        T1Pqp = xn{1}(iqp);
-        T1Lqp = xn{2}(iqp);
-        kplqp = xn{3}(iqp);
-        klpqp =    0 ;     % @cmwalker where do I get this from ? 
-        kveqp = xn{4}(iqp);
+        switch (NumberUncertain)
+           case(3)
+             T1Pqp   = T1pmean;
+             T1Lqp   = T1lmean;
+             kplqp   = xn{1}(iqp);
+             klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+             kveqp   = xn{2}(iqp);
+             t0qp    = xn{3}(iqp); 
+           case(4)
+             T1Pqp   = xn{1}(iqp);
+             T1Lqp   = xn{2}(iqp);
+             kplqp   = xn{3}(iqp);
+             klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+             kveqp   = xn{4}(iqp);
+             t0qp    = t0mean(1); 
+        end 
         %
         currentTR = TR ;
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
         % setup AIF
         integratedt =TRList(iii)+ [1:2:2*nsubstep+1]*deltat/2;
-        integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-jmt0,jmalpha,jmbeta) ;
+        integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )
         % 
@@ -206,7 +223,7 @@ if optf
     x0.FaList = params.FaList;
     x0.state  = repmat( 1/scalestate * Mz./cos(params.FaList),1,1,lqp);
     % truthconstraint = infeasibility(stateconstraint,x0);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-9,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' , 'ConstraintDerivative', 'auto-reverse')
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
