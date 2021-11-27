@@ -6,30 +6,6 @@
 clear all
 close all
 clc
-N_vect = round(linspace(5,60,15));
-%% Variable Setup
-Ntime = 23;
-TR = 2;
-TR_list = (0:(Ntime-1))*TR;
-T1a = 43;
-T1b = 33;
-Kpl = 0.1;
-alpha = 2.5;
-beta = 4.5;
-M0 = [0,0];
-kve = 0.02;
-ve = 0.95;
-VIF_scale_fact = [1;0];
-bb_flip_angle = 20;
-opts = optimset('lsqcurvefit');
-opts.TolFun = 1e-09;
-opts.TolX = 1e-09;
-opts.Display = 'off';
-params = struct('t0',[0;0],'gammaPdfA',[alpha;1],'gammaPdfB',[beta;1],...
-    'scaleFactor',VIF_scale_fact,'T1s',[T1a,T1b],'ExchangeTerms',[0,Kpl;0,0],...
-    'TRList',TR_list,'PerfusionTerms',[kve,0],'volumeFractions',ve,...
-    'fitOptions', opts);
-model = HPKinetics.NewMultiPoolTofftsGammaVIF();
 
 %% Tissue Parameters
 T1pmean = [ 30 ]; % s
@@ -40,7 +16,31 @@ kplmean = [ 5 ];       % s
 kplstdd = [ 5 ];       % s
 kvemean = [ 0.15 ];       % s
 kvestdd = [ .05  ];       % s
-tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd];
+t0mean  = [ 4    ];       % s
+t0sttd  = [ 1.3  ] ;       % s
+alphamean  =  [2.5];
+betamean  =  [4.5];
+tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd];
+
+%% Variable Setup
+Ntime = 23;
+TR = 2;
+TR_list = (0:(Ntime-1))*TR;
+M0 = [0,0];
+%ve = 0.95;
+ve = 1.;
+VIF_scale_fact = [1;0];
+bb_flip_angle = 20;
+opts = optimset('lsqcurvefit');
+opts.TolFun = 1e-09;
+opts.TolX = 1e-09;
+opts.Display = 'off';
+params = struct('t0',[t0mean(1);0],'gammaPdfA',[alphamean(1)  ;1],'gammaPdfB',[betamean(1);1],...
+    'scaleFactor',VIF_scale_fact,'T1s',[T1pmean(1),T1lmean(1)],'ExchangeTerms',[0,kplmean(1) ;0,0],...
+    'TRList',TR_list,'PerfusionTerms',[kvemean(1),0],'volumeFractions',ve,...
+    'fitOptions', opts);
+model = HPKinetics.NewMultiPoolTofftsGammaVIF();
+  
 
 %% Get true Mz
 %% Choose Excitation Angle
@@ -50,8 +50,6 @@ for i = 1:numel(FAType)
     switch (FAType{i})
         case('Const') % Nagashima for lactate const 10 pyruvate
             tic
-            E1(1) = exp(-TR*(1/T1a+Kpl));
-            E1(2) = exp(-TR/T1b);
             for n = 1:Ntime
                 %flips(2,n) = acos(sqrt((E1(2)^2-E1(2)^(2*(N-n+1)))/(1-E1(2)^(2*(N-n+1)))));
                 flips(2,n) = 15*pi/180;
@@ -88,10 +86,10 @@ if plotinit
     xlabel('sec')
 
     % plot gamma
-    jmA0    = 10.
-    jmalpha = 2.5
-    jmbeta  = 4.5
-    jmt0    = 0
+    jmA0    = VIF_scale_fact(1);
+    jmalpha = alphamean(1);
+    jmbeta  = betamean(1);
+    jmt0    = t0mean(1);
     jmaif   = jmA0  * gampdf(TR_list - jmt0  , jmalpha , jmbeta);
     figure(4)
     plot(TR_list,jmaif ,'b')
@@ -106,14 +104,6 @@ TRi = getTR(TR_list); % vector of 'size(TR_list) - 1'
 %% optimize MI for TR and FA
 optf = true;
 if optf
-    % Pulse Sequence Bounds
-    pmin =  [TRi'-1.5; flips(:)*0];     % <-- constraints on TR's and not TR_list
-    pmax =  [TRi'+1.5; flips(:)*0+pi/2];% <-- constraints on TR's and not TR_list
-    findiffrelstep=1.e-6;
-    tolx=1.e-9;%1.e-5;
-    tolfun=1.e-9;%1.e-5;QALAS_synphan_MIcalc.m
-    maxiter=500;
-
     tic;
     % Convert this function file to an optimization expression.
     
@@ -124,17 +114,16 @@ if optf
 
     % setup optimization variables
     Nspecies = 2
-    FaList = optimvar('FaList',2,Ntime);
+    FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
     NGauss  = 3
+    NumberUncertain=4;
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     lqp=length(xn{1}(:));
-    statevariable = optimvar('state',Nspecies,Ntime,lqp);
+    statevariable = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
     stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
-    % scaling important for the optimizaiton step length update
+    % scaling important for the optimization step length update
     scalestate = 1.e-2;
-    %statevariable =scalestate * statevariableraw;
-  
 
     modelSNR = 10 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
@@ -180,15 +169,15 @@ if optf
         expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
         % mid-point rule integration
         aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
-    (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ;
-        stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii)).*  statevariable(:,iii,iqp ))   + aifterm ;
+    kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand ;
+        stateconstraint(:,iii+1,iqp) = scalestate*statevariable(:,iii+1,iqp) ==  expATR *(scalestate*cos(FaList(:,iii)).*statevariable(:,iii,iqp ))   + aifterm ;
       end
     end
 
     disp('build objective function')
     sumstatevariable = optimexpr([Nspecies,lqp]);
     for jjj = 1:lqp
-       sumstatevariable(:,jjj) =  sum(sin(FaList).*statevariable(:,:,jjj),2);
+       sumstatevariable(:,jjj) =  sum(scalestate*sin(FaList).*statevariable(:,:,jjj),2);
     end 
     %statematrix = optimexpr([lqp,lqp]);
     expandvar  = ones(1,lqp);
@@ -197,9 +186,9 @@ if optf
     Hz = 0;
     for jjj=1:lqp2
       znu=xn2{1}(jjj) ;
-      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/sqrt(2)/signu   - (znu + diffsummtwo).^2/sqrt(2)/signu  ) * wn(:)));
+      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signu^2   - (znu + diffsummtwo).^2/2/signu^2  ) * wn(:)));
     end
-    MIGaussObj = -pi^(-1.5-2.5)*Hz; 
+    MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
@@ -215,10 +204,10 @@ if optf
     % Solve the new problem. The solution is essentially the same as before.
     
     x0.FaList = params.FaList;
-    x0.state  = repmat( Mz./cos(params.FaList),1,1,lqp);
+    x0.state  = repmat( 1/scalestate * Mz./cos(params.FaList),1,1,lqp);
     % truthconstraint = infeasibility(stateconstraint,x0);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
-    [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
+    [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' , 'ConstraintDerivative', 'auto-reverse')
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
 
