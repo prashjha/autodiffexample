@@ -211,13 +211,13 @@ for idesign = 1:length(solnList)
        % random initial guess
        switch (numberParameters)
           case(1) 
-            x0.kpl        = unifrnd(.01,10);
+            x0.kpl        = unifrnd(.06,.24);
           case(2) 
             x0.kpl        = unifrnd(.01,10);
             x0.kveqp      = unifrnd(.02,10);
           case(3) 
-            x0.kpl        = unifrnd(.01,10);
-            x0.kveqp      = unifrnd(.02,10);
+            x0.kpl        = unifrnd(.06,.24);
+            x0.kveqp      = unifrnd(.02,.08);
             x0.t0         = unifrnd(0  ,8);
           case(4) 
             x0.kpl        = unifrnd(.01,10);
