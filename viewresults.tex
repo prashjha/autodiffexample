@@ -55,7 +55,7 @@
 &\IfFileExists{OptMz#1.png}{\includegraphics[width=0.24\textwidth]{{OptMz#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
 \end{tabular}           
 \vspace{-15pt}
-\caption{#1}\label{Fig:#1}
+\caption{NG=number gauss points. NU=number uncertain var. #1}\label{Fig:#1}
 \end{figure}
 }
 
@@ -80,6 +80,16 @@ Received: date / Accepted: date
 \begin{document}
 
 \setlength{\unitlength}{.1cm}
+
+\begin{figure}[H]
+\begin{tabular}{cc} 
+ \includegraphics[width=0.24\textwidth]{solversummaryNP1.png} & 
+ \includegraphics[width=0.24\textwidth]{solversummaryNP3.png}
+ \\
+(a) & (b)\\
+\end{tabular}           
+\caption{Inverse Solver Summary. (a) kpl inverse only (b)kpl, kve, t0 }\label{Fig:summary}
+\end{figure}
 
 \viewdata{NG3Nu3adjSNR10}
 \viewdata{NG4Nu3adjSNR10}
