@@ -31,7 +31,7 @@ TR_list = (0:(Ntime-1))*TR;
 M0 = [0,0];
 %ve = 0.95;
 ve = 1.;
-VIF_scale_fact = [1;0];
+VIF_scale_fact = [100;0];
 bb_flip_angle = 20;
 opts = optimset('lsqcurvefit');
 opts.TolFun = 1e-09;
@@ -134,7 +134,8 @@ if optf
 
     modelSNR = 10 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
-    signu = Ntime * signuImage;
+    % variance for Gauss RV is sum. sqrt for std
+    signu = sqrt(2* Ntime) * signuImage;
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
@@ -164,7 +165,7 @@ if optf
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
         % setup AIF
-        integratedt =TRList(iii)+ [1:2:2*nsubstep+1]*deltat/2;
+        integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
         integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )

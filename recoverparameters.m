@@ -47,12 +47,10 @@ for jjj =1:length(solnList)
   timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mz(2,:);
   % add noise for num_trials
   for kkk = 1:num_trials
-      realchannel = imagenoise *randn(Ntime,1);
-      imagchannel = imagenoise *randn(Ntime,1);
-      timehistory(:,1,kkk,jjj)= timehistory(:,1,num_trials+1,jjj) + sqrt( realchannel.^2 + imagchannel.^2); 
-      realchannel = imagenoise *randn(Ntime,1);
-      imagchannel = imagenoise *randn(Ntime,1);
-      timehistory(:,2,kkk,jjj)= timehistory(:,2,num_trials+1,jjj) + sqrt( realchannel.^2 + imagchannel.^2);  
+      pyrnoise = imagenoise *randn(Ntime,1);
+      timehistory(:,1,kkk,jjj)= timehistory(:,1,num_trials+1,jjj) + pyrnoise;
+      lacnoise = imagenoise *randn(Ntime,1);
+      timehistory(:,2,kkk,jjj)= timehistory(:,2,num_trials+1,jjj) + lacnoise;
   end
 end
 

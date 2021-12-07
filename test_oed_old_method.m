@@ -63,7 +63,7 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
   M0 = [0,0];
   %ve = 0.95;
   ve = 1.;
-  VIF_scale_fact = [1;0];
+  VIF_scale_fact = [100;0];
   bb_flip_angle = 20;
   opts = optimset('lsqcurvefit');
   opts.TolFun = 1e-09;
@@ -150,7 +150,8 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       % signal sum  ==> signu = Ntime * signuImage 
       % noise calc max signal assuming total signal is sum of gaussian RV
       signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/SignalNoiseMI ;
-      signu = Ntime * signuImage;
+      % variance for Gauss RV is sum. sqrt for std
+      signu = sqrt(2* Ntime) * signuImage;
       params.SignalNoiseMI = signu;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
