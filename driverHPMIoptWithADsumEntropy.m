@@ -216,7 +216,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
   
       % scaling important for the optimizaiton step length update
-      scalestate = 1.e-2;
+      scalestate = 1.;
       statevariable =scalestate * statevariableraw;
   
       disp('build state variable')
@@ -320,11 +320,11 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       handle = figure(12)
       plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
       hold
-      plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
+      plot(params.TRList,scalestate*popt.state(:,1, 1),'b',params.TRList,scalestate*popt.state(:,2, 1),'k')
       if(lqp > 1)
-        plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
-        plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
-        plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
+        plot(params.TRList,scalestate*popt.state(:,1, 5),'b',params.TRList,scalestate*popt.state(:,2, 5),'k')
+        plot(params.TRList,scalestate*popt.state(:,1,10),'b',params.TRList,scalestate*popt.state(:,2,10),'k')
+        plot(params.TRList,scalestate*popt.state(:,1,15),'b',params.TRList,scalestate*popt.state(:,2,15),'k')
       end
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')

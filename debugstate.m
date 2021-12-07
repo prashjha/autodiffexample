@@ -139,5 +139,11 @@ end
     plot(params.TRList,walkerMz(1,:),'b--',params.TRList,walkerMz(2,:),'k--')
     hold
     plot(params.TRList,cos(params.FaList(1,:)).*statevariable(1,:),'b',params.TRList,cos(params.FaList(2,:)).*statevariable(2,:),'k')
+    params.ExchangeTerms(1,2) = .75
+    [t_axis,walkerMxyhigh,walkerMzhigh] = model.compile(M0.',params);
+    plot(params.TRList,walkerMzhigh(1,:),'g--',params.TRList,walkerMzhigh(2,:),'r--')
+    params.ExchangeTerms(1,2) = .05
+    [t_axis,walkerMxylow,walkerMzlow] = model.compile(M0.',params);
+    plot(params.TRList,walkerMzlow(1,:),'g',params.TRList,walkerMzlow(2,:),'r')
 
     

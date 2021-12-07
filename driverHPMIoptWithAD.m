@@ -130,7 +130,7 @@ if optf
     statevariable = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
     stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
     % scaling important for the optimization step length update
-    scalestate = 1.e-2;
+    scalestate = 1.;
 
     modelSNR = 10 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
