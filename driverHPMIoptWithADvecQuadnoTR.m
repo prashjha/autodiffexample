@@ -72,7 +72,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
   tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
   
   %% Variable Setup
-  Ntime = 23;
+  Ntime = 40;
   TR = 2;
   TR_list = (0:(Ntime-1))*TR;
   M0 = [0,0];

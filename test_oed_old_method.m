@@ -57,7 +57,7 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
   
   
   %% Variable Setup
-  Ntime = 23;
+  Ntime = 40;
   TR = 2;
   TR_list = (0:(Ntime-1))*TR;
   M0 = [0,0];
