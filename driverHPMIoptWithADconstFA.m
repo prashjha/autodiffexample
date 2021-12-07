@@ -7,51 +7,31 @@ clear all
 clc
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
-driverHPMIconst(3,3, 2,myoptions)
-driverHPMIconst(3,3, 5,myoptions)
-driverHPMIconst(3,3, 8,myoptions)
-driverHPMIconst(3,3,10,myoptions)
-driverHPMIconst(3,3,12,myoptions)
-driverHPMIconst(3,3,15,myoptions)
-driverHPMIconst(3,3,20,myoptions)
-driverHPMIconst(3,3,22,myoptions)
-driverHPMIconst(3,3,25,myoptions)
-driverHPMIconst(4,3, 2,myoptions)
-driverHPMIconst(4,3, 5,myoptions)
-driverHPMIconst(4,3, 8,myoptions)
-driverHPMIconst(4,3,10,myoptions)
-driverHPMIconst(4,3,12,myoptions)
-driverHPMIconst(4,3,15,myoptions)
-driverHPMIconst(4,3,20,myoptions)
-driverHPMIconst(4,3,22,myoptions)
-driverHPMIconst(4,3,25,myoptions)
-%driverHPMIopt(5,3,10,myoptions)
-      %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
-      %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','StepTolerance',1.000000e-16)
-myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
-driverHPMIconst(3,3, 2,myoptions)
-driverHPMIconst(3,3, 5,myoptions)
-driverHPMIconst(3,3, 8,myoptions)
-driverHPMIconst(3,3,10,myoptions)
-driverHPMIconst(3,3,12,myoptions)
-driverHPMIconst(3,3,15,myoptions)
-driverHPMIconst(3,3,20,myoptions)
-driverHPMIconst(3,3,22,myoptions)
-driverHPMIconst(3,3,25,myoptions)
-driverHPMIconst(4,3, 2,myoptions)
-driverHPMIconst(4,3, 5,myoptions)
-driverHPMIconst(4,3, 8,myoptions)
-driverHPMIconst(4,3,10,myoptions)
-driverHPMIconst(4,3,12,myoptions)
-driverHPMIconst(4,3,15,myoptions)
-driverHPMIconst(4,3,20,myoptions)
-driverHPMIconst(4,3,22,myoptions)
-driverHPMIconst(4,3,25,myoptions)
-%driverHPMIopt(5,3,10,myoptions)
+%% driverHPMIconst(3,3, 2,myoptions)
+%% driverHPMIconst(3,3, 5,myoptions)
+%% driverHPMIconst(3,3, 8,myoptions)
+%% driverHPMIconst(3,3,10,myoptions)
+%% driverHPMIconst(3,3,12,myoptions)
+%% driverHPMIconst(3,3,15,myoptions)
+%% driverHPMIconst(3,3,20,myoptions)
+%% driverHPMIconst(3,3,22,myoptions)
+%% driverHPMIconst(3,3,25,myoptions)
+%% driverHPMIconst(4,3, 2,myoptions)
+%% driverHPMIconst(4,3, 5,myoptions)
+%% driverHPMIconst(4,3, 8,myoptions)
+%% driverHPMIconst(4,3,10,myoptions)
+%% driverHPMIconst(4,3,12,myoptions)
+%% driverHPMIconst(4,3,15,myoptions)
+%% driverHPMIconst(4,3,20,myoptions)
+%% driverHPMIconst(4,3,22,myoptions)
+%% driverHPMIconst(4,3,25,myoptions)
+%% %driverHPMIopt(5,3,10,myoptions)
+
 % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
-function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
+%function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
 
+  NGauss=3,NumberUncertain=3,modelSNR=10
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm
   close all
 
@@ -170,10 +150,8 @@ function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
            [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
       end 
       lqp=length(xn{1}(:));
-      statevariable = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
-      stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
+      statevariable  = optimexpr([Nspecies,Ntime,lqp]);
       % scaling important for the optimization step length update
-      scalestate = 1.;
   
       signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
       % variance for Gauss RV is sum. sqrt for std
@@ -183,7 +161,7 @@ function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
   
   
       disp('build state variable')
-      stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
+      statevariable(:,1,:) ==0;
       for iqp = 1:lqp
         for iii = 1:Ntime-1
           switch (NumberUncertain)
@@ -230,14 +208,14 @@ function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
           % mid-point rule integration
           aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
       kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand ;
-          stateconstraint(:,iii+1,iqp) = scalestate*statevariable(:,iii+1,iqp) ==  expATR *(scalestate*cos(FaList(:)).*statevariable(:,iii,iqp ))   + aifterm ;
+          statevariable(:,iii+1,iqp) =  expATR *(cos(FaList(:)).*statevariable(:,iii,iqp ))   + aifterm ;
         end
       end
   
       disp('build objective function')
       sumstatevariable = optimexpr([Nspecies,lqp]);
       for jjj = 1:lqp
-         sumstatevariable(:,jjj) =  sum(scalestate*repmat(sin(FaList),1,Ntime).*statevariable(:,:,jjj),2);
+         sumstatevariable(:,jjj) =  sum(repmat(sin(FaList),1,Ntime).*statevariable(:,:,jjj),2);
       end 
       %statematrix = optimexpr([lqp,lqp]);
       expandvar  = ones(1,lqp);
@@ -254,7 +232,7 @@ function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
       % Create an optimization problem using these converted optimization expressions.
       
       disp('create optim prob')
-      convprob = optimproblem('Objective',MIGaussObj , "Constraints",stateconstraint);
+      convprob = optimproblem('Objective',MIGaussObj );
       %% 
       % View the new problem.
       
@@ -263,11 +241,16 @@ function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
       %% 
       % Solve the new problem. The solution is essentially the same as before.
       
-      x0.FaList = params.FaList(:,1);
-      x0.state  = repmat( 1/scalestate * Mz./cos(params.FaList),1,1,lqp);
+      [pyrgrid,lacgrid] = meshgrid(0:1:30,0:1:30);
+      brutesearch= zeros(size(pyrgrid));
+      for iii = 1:length(pyrgrid(:))
+          [pyrgrid(iii);lacgrid(iii)]
+          x0.FaList = [pyrgrid(iii);lacgrid(iii)];
+          brutesearch(iii) = evaluate(MIGaussObj,x0);
+      end
+
       % truthconstraint = infeasibility(stateconstraint,x0);
-      myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-9,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
-      [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' , 'ConstraintDerivative', 'auto-reverse')
+      %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' , 'ConstraintDerivative', 'auto-reverse')
       %[popt,fval,exitflag,output] = solve(convprob,x0 )
   
   
@@ -303,6 +286,6 @@ function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
       saveas(handle,sprintf('OptMzNG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
   end 
 
-end
+%end
 
 
