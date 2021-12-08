@@ -245,7 +245,7 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
       brutesearch= zeros(size(pyrgrid));
       for iii = 1:length(pyrgrid(:))
           [pyrgrid(iii);lacgrid(iii)]
-          x0.FaList = [pyrgrid(iii);lacgrid(iii)];
+          x0.FaList = [pi/180*pyrgrid(iii);pi/180*lacgrid(iii)];
           brutesearch(iii) = evaluate(MIGaussObj,x0);
       end
 
@@ -253,34 +253,46 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
       %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' , 'ConstraintDerivative', 'auto-reverse')
       %[popt,fval,exitflag,output] = solve(convprob,x0 )
   
+      [maxMI,idmax] = max(brutesearch(:));
+      [minMI,idmin] = min(brutesearch(:));
+      popt.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
+      pneg.FaList = repmat([pi/180*pyrgrid(idmax);pi/180*lacgrid(idmax)],1,Ntime);
   
       toc;
       handle = figure(5)
-      saveas(handle,sprintf('historyNG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR ),'png')
+      imagesc(brutesearch)
+      colorbar
+      xlabel('FA Pyruvate - deg')
+      ylabel('FA Lactate - deg')
+      text(pyrgrid(idmin)+1,lacgrid(idmin)+1, 'opt');
+      text(pyrgrid(idmax)+1,lacgrid(idmax)+1, 'control');
+      saveas(handle,sprintf('historyNG%dNu%dconstDirectSNR%02d',NGauss,NumberUncertain,modelSNR ),'png')
       % save solution
       optparams = params;
-      optparams.FaList = repmat(popt.FaList,1,Ntime);
+      optparams.FaList = popt.FaList;
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-      save(sprintf('poptNG%dNu%dconst%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
+      negparams = params;
+      negparams.FaList = pneg.FaList;
+      [t_axisneg,Mxyneg,Mzneg] = model.compile(M0.',negparams);
+      save(sprintf('poptNG%dNu%dconst%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','pneg','params','Mxy','Mz','Mxyopt','Mzopt','Mxyneg','Mzneg','signu','signuImage')
       handle = figure(10)
-      plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
+      plot(optparams.TRList,Mxyopt(1,:),'b--',optparams.TRList,Mxyopt(2,:),'k--')
+      hold
+      plot(negparams.TRList,Mxyneg(1,:),'b',negparams.TRList,Mxyneg(2,:),'k')
       ylabel('MI Mxy')
       xlabel('sec'); legend('Pyr','Lac')
       saveas(handle,sprintf('OptMxyNG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
       handle = figure(11)
-      plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b',optparams.TRList,optparams.FaList(2,:)*180/pi,'k')
+      plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b--',optparams.TRList,optparams.FaList(2,:)*180/pi,'k--')
+      hold
+      plot(negparams.TRList,negparams.FaList(1,:)*180/pi,'b',negparams.TRList,negparams.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
       saveas(handle,sprintf('OptFANG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
       handle = figure(12)
       plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
       hold
-      plot(optparams.TRList,scalestate* popt.state(1,:, 1),'b',optparams.TRList,scalestate* popt.state(2,:, 1),'k')
-      if(lqp > 1)
-        plot(optparams.TRList,scalestate* popt.state(1,:, 5),'b',optparams.TRList,scalestate* popt.state(2,:, 5),'k')
-        plot(optparams.TRList,scalestate* popt.state(1,:,10),'b',optparams.TRList,scalestate* popt.state(2,:,10),'k')
-        plot(optparams.TRList,scalestate* popt.state(1,:,15),'b',optparams.TRList,scalestate* popt.state(2,:,15),'k')
-      end
+      plot(negparams.TRList,Mzneg(1,:),'b',negparams.TRList,Mzneg(2,:),'k')
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
       saveas(handle,sprintf('OptMzNG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
