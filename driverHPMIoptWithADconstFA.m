@@ -241,7 +241,7 @@ function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
       %% 
       % Solve the new problem. The solution is essentially the same as before.
       
-      [pyrgrid,lacgrid] = meshgrid(0:1:30,0:1:30);
+      [pyrgrid,lacgrid] = meshgrid(0:1:35,0:1:35);
       brutesearch= zeros(size(pyrgrid));
       for iii = 1:length(pyrgrid(:))
           [pyrgrid(iii);lacgrid(iii)]
