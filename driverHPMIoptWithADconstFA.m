@@ -7,31 +7,31 @@ clear all
 clc
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
-%% driverHPMIconst(3,3, 2,myoptions)
-%% driverHPMIconst(3,3, 5,myoptions)
-%% driverHPMIconst(3,3, 8,myoptions)
-%% driverHPMIconst(3,3,10,myoptions)
-%% driverHPMIconst(3,3,12,myoptions)
-%% driverHPMIconst(3,3,15,myoptions)
-%% driverHPMIconst(3,3,20,myoptions)
-%% driverHPMIconst(3,3,22,myoptions)
-%% driverHPMIconst(3,3,25,myoptions)
-%% driverHPMIconst(4,3, 2,myoptions)
-%% driverHPMIconst(4,3, 5,myoptions)
-%% driverHPMIconst(4,3, 8,myoptions)
-%% driverHPMIconst(4,3,10,myoptions)
-%% driverHPMIconst(4,3,12,myoptions)
-%% driverHPMIconst(4,3,15,myoptions)
-%% driverHPMIconst(4,3,20,myoptions)
-%% driverHPMIconst(4,3,22,myoptions)
-%% driverHPMIconst(4,3,25,myoptions)
-%% %driverHPMIopt(5,3,10,myoptions)
+driverHPMIconst(3,3, 2,myoptions)
+driverHPMIconst(3,3, 5,myoptions)
+driverHPMIconst(3,3, 8,myoptions)
+driverHPMIconst(3,3,10,myoptions)
+driverHPMIconst(3,3,12,myoptions)
+driverHPMIconst(3,3,15,myoptions)
+driverHPMIconst(3,3,20,myoptions)
+driverHPMIconst(3,3,22,myoptions)
+driverHPMIconst(3,3,25,myoptions)
+driverHPMIconst(4,3, 2,myoptions)
+driverHPMIconst(4,3, 5,myoptions)
+driverHPMIconst(4,3, 8,myoptions)
+driverHPMIconst(4,3,10,myoptions)
+driverHPMIconst(4,3,12,myoptions)
+driverHPMIconst(4,3,15,myoptions)
+driverHPMIconst(4,3,20,myoptions)
+driverHPMIconst(4,3,22,myoptions)
+driverHPMIconst(4,3,25,myoptions)
+%driverHPMIopt(5,3,10,myoptions)
 
 % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
-%function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
+function driverHPMIconst(NGauss,NumberUncertain,modelSNR,myoptions)
 
-  NGauss=3,NumberUncertain=3,modelSNR=10
+  %NGauss=3,NumberUncertain=3,modelSNR=10
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm
   close all
 
@@ -264,40 +264,39 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
       colorbar
       xlabel('FA Pyruvate - deg')
       ylabel('FA Lactate - deg')
+      title('MI optimization surface')
       text(pyrgrid(idmin)+1,lacgrid(idmin)+1, 'opt');
       text(pyrgrid(idmax)+1,lacgrid(idmax)+1, 'control');
       saveas(handle,sprintf('historyNG%dNu%dconstDirectSNR%02d',NGauss,NumberUncertain,modelSNR ),'png')
       % save solution
       optparams = params;
       optparams.FaList = popt.FaList;
-      [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
+      [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
       negparams = params;
       negparams.FaList = pneg.FaList;
       [t_axisneg,Mxyneg,Mzneg] = model.compile(M0.',negparams);
-      save(sprintf('poptNG%dNu%dconst%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','pneg','params','Mxy','Mz','Mxyopt','Mzopt','Mxyneg','Mzneg','signu','signuImage')
+      save(sprintf('poptNG%dNu%dconstDirectSNR%02d.mat',NGauss,NumberUncertain,modelSNR) ,'popt','pneg','params','Mxy','Mz','Mxyopt','Mzopt','Mxyneg','Mzneg','signu','signuImage')
       handle = figure(10)
       plot(optparams.TRList,Mxyopt(1,:),'b--',optparams.TRList,Mxyopt(2,:),'k--')
       hold
       plot(negparams.TRList,Mxyneg(1,:),'b',negparams.TRList,Mxyneg(2,:),'k')
       ylabel('MI Mxy')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMxyNG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptMxyNG%dNu%dconstDirectSNR%02d',NGauss,NumberUncertain,modelSNR),'png')
       handle = figure(11)
       plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b--',optparams.TRList,optparams.FaList(2,:)*180/pi,'k--')
       hold
       plot(negparams.TRList,negparams.FaList(1,:)*180/pi,'b',negparams.TRList,negparams.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptFANG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptFANG%dNu%dconstDirectSNR%02d',NGauss,NumberUncertain,modelSNR),'png')
       handle = figure(12)
       plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
       hold
       plot(negparams.TRList,Mzneg(1,:),'b',negparams.TRList,Mzneg(2,:),'k')
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMzNG%dNu%dconst%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptMzNG%dNu%dconstDirectSNR%02d',NGauss,NumberUncertain,modelSNR),'png')
   end 
 
-%end
-
-
+end
