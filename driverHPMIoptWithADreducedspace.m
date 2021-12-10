@@ -172,8 +172,9 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
   
       lqp=length(xn{1}(:));
       %statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
-      statevariable  = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
-      stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
+      statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+      auxvariable      = optimexpr(   [Ntime,Nspecies,lqp]);
+      stateconstraint  = optimconstr( [Ntime,Nspecies,lqp]);
   
       disp('build state variable')
       
@@ -203,6 +204,7 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
        
       % IC
       stateconstraint(1,:,:)  = statevariable(1,:,:) ==0;
+      auxvariable(1,:,:) =0;
       for iii = 1:Ntime-1
           currentTR = diffTR(iii);
           nsubstep = 5;
@@ -214,6 +216,8 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
           aiftermpyr = deltat * kveqp.*  [ exp(- T1Pqp.^(-1) - kplqp - kveqp)*deltat*[.5:1:nsubstep]  ].* integrand ; 
           aiftermlac = deltat * kveqp.*  ([ (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) + kplqp.*exp(-T1Lqp.^(-1) )).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  ).* integrand ; 
   
+          auxvariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( auxvariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
+          auxvariable(iii+1,2,:) =  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( auxvariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( auxvariable(iii,1,: )  ),1,1,lqp) ; 
           % setup state as linear constraint
           stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) ==  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
           stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) ==  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
@@ -266,7 +270,7 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
       % Solve the new problem. The solution is essentially the same as before.
       
       x0.FaList = params.FaList;
-      x0.state  = repmat( ( Mz./cos(params.FaList))',1,1,lqp);
+      x0.state  = evaluate(auxvariable ,x0);
       %'HessianApproximation', 'lbfgs'
   
       Xinit = [ x0.FaList(:); x0.state(:)];

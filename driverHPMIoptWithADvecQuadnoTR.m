@@ -212,12 +212,9 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
   
       lqp=length(xn{1}(:));
       %statevariable    = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0,'UpperBound',.1);
-      statevariableraw  = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+      statevariable  = optimvar('state',Ntime,Nspecies,lqp,'LowerBound',0);
+      auxvariable      = optimexpr(   [Ntime,Nspecies,lqp]);
       stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
-  
-      % scaling important for the optimizaiton step length update
-      scalestate = 1.;
-      statevariable =scalestate * statevariableraw;
   
       disp('build state variable')
       
@@ -247,6 +244,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
        
       % IC
       stateconstraint(1,:,:)  = statevariable(1,:,:) ==0;
+      auxvariable(1,:,:) =0;
       for iii = 1:Ntime-1
           currentTR = diffTR(iii);
           nsubstep = 5;
@@ -259,6 +257,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
           aiftermlac = deltat * kveqp.*  ([ (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp) ) + kplqp.*exp(-T1Lqp.^(-1) )).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)] *deltat*[.5:1:nsubstep]  ).* integrand ; 
   
           % setup state as linear constraint
+          auxvariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( auxvariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
+          auxvariable(iii+1,2,:) =  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( auxvariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( auxvariable(iii,1,: )  ),1,1,lqp) ; 
           stateconstraint(iii+1,1,:)  = statevariable(iii+1,1,:) ==  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( statevariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
           stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) ==  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
       end
@@ -307,7 +307,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       % Solve the new problem. The solution is essentially the same as before.
       
       x0.FaList = params.FaList;
-      x0.state  = repmat(1/scalestate * ( Mz./cos(params.FaList))',1,1,lqp);
+      x0.state  = evaluate(auxvariable ,x0);
       %'HessianApproximation', 'lbfgs'
   
       % truthconstraint = infeasibility(stateconstraint,x0);
@@ -335,11 +335,11 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       handle = figure(12)
       plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
       hold
-      plot(params.TRList,scalestate*popt.state(:,1, 1),'b',params.TRList,scalestate*popt.state(:,2, 1),'k')
+      plot(params.TRList,popt.state(:,1, 1),'b',params.TRList,popt.state(:,2, 1),'k')
       if(lqp > 1)
-        plot(params.TRList,scalestate*popt.state(:,1, 5),'b',params.TRList,scalestate*popt.state(:,2, 5),'k')
-        plot(params.TRList,scalestate*popt.state(:,1,10),'b',params.TRList,scalestate*popt.state(:,2,10),'k')
-        plot(params.TRList,scalestate*popt.state(:,1,15),'b',params.TRList,scalestate*popt.state(:,2,15),'k')
+        plot(params.TRList,popt.state(:,1, 5),'b',params.TRList,popt.state(:,2, 5),'k')
+        plot(params.TRList,popt.state(:,1,10),'b',params.TRList,popt.state(:,2,10),'k')
+        plot(params.TRList,popt.state(:,1,15),'b',params.TRList,popt.state(:,2,15),'k')
       end
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
