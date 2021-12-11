@@ -196,44 +196,45 @@ clc
       pmax =  [flips(:)*0+35*pi/180];
       findiffrelstep=1.e-6;
       tolx=1.e-9;%1.e-5;
-      tolfun=1.e-9;%1.e-5;QALAS_synphan_MIcalc.m
+      tolfun=5.e-4;%1.e-5;QALAS_synphan_MIcalc.m
       maxiter=400;
   
       % fn
       Fx = @(x) MI_GHQuad_HPTofts_With_Der_Parallel_old_method(x, M0, params, model, NumberUncertain, xn, wn, xn2, wn2, T1Pqp, T1Lqp, kplqp, klpqp, kveqp, t0qp);
   
-      [myobjfun, myobjfun_Der]= Fx(InitialGuess)
-      %% tic;
-      %% [designopt,fval,exitflag,output,lambda,grad,hessian] ...
-      %%  =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
-      %%     optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
-      %%     maxiter,'Display','iter-detailed',... 
-      %%     'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
-      %% toc;
+      %% debug
+      %% [myobjfun, myobjfun_Der]= Fx(InitialGuess)
+      tic;
+      [designopt,fval,exitflag,output,lambda,grad,hessian] ...
+       =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
+          optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
+          maxiter,'Display','iter-detailed',... 
+          'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
+      toc;
   
-      %% % save convergence history
-      %% handle = figure(5)
-      %% saveas(handle,sprintf('historyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI ),'png')
-      %% popt.FaList = reshape(designopt(1:end),size(params.FaList ));
-      %% optparams = params;
-      %% optparams.FaList = popt.FaList;
-      %% [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      %% save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
-      %% handle = figure(10)
-      %% plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
-      %% ylabel('adj MI Mxy')
-      %% xlabel('sec'); legend('Pyr','Lac')
-      %% saveas(handle,sprintf('OptMxyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
-      %% handle = figure(11)
-      %% plot(params.TRList,optparams.FaList(1,:)*180/pi,'b',params.TRList,optparams.FaList(2,:)*180/pi,'k')
-      %% ylabel('adj MI FA (deg)')
-      %% xlabel('sec'); legend('Pyr','Lac')
-      %% saveas(handle,sprintf('OptFANG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
-      %% handle = figure(12)
-      %% plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
-      %% ylabel('adj MI Mz ')
-      %% xlabel('sec'); legend('Pyr','Lac')
-      %% saveas(handle,sprintf('OptMzNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+      % save convergence history
+      handle = figure(5)
+      saveas(handle,sprintf('historyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI ),'png')
+      popt.FaList = reshape(designopt(1:end),size(params.FaList ));
+      optparams = params;
+      optparams.FaList = popt.FaList;
+      [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
+      save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
+      handle = figure(10)
+      plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
+      ylabel('adj MI Mxy')
+      xlabel('sec'); legend('Pyr','Lac')
+      saveas(handle,sprintf('OptMxyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+      handle = figure(11)
+      plot(params.TRList,optparams.FaList(1,:)*180/pi,'b',params.TRList,optparams.FaList(2,:)*180/pi,'k')
+      ylabel('adj MI FA (deg)')
+      xlabel('sec'); legend('Pyr','Lac')
+      saveas(handle,sprintf('OptFANG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+      handle = figure(12)
+      plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
+      ylabel('adj MI Mz ')
+      xlabel('sec'); legend('Pyr','Lac')
+      saveas(handle,sprintf('OptMzNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
   end 
   
   %% convert time sequence to TR and TR to time sequence

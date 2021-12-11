@@ -51,7 +51,6 @@ FAType = {'Const'};
 for i = 1:numel(FAType)
     switch (FAType{i})
         case('Const') % Nagashima for lactate const 10 pyruvate
-            tic
             for n = 1:Ntime
                 %flips(2,n) = acos(sqrt((E1(2)^2-E1(2)^(2*(N-n+1)))/(1-E1(2)^(2*(N-n+1)))));
                 flips(2,n) = 15*pi/180;
@@ -59,10 +58,8 @@ for i = 1:numel(FAType)
             end
             params.FaList = flips;
     end
-    tic
     %% Fitting
     [t_axis,Mxy,Mz] = model.compile(M0.',params);
-    toc
     save_Mxy{i} = Mxy;
     save_Mz{i} = Mz;
     save_t_axis{i} = t_axis;
@@ -225,45 +222,45 @@ if optf
     
 
     % truthconstraint = infeasibility(stateconstraint,x0);
-    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-9,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
     InitialGuess =  [flips(:)];   
     pmin =  [flips(:)*0];     
     pmax =  [flips(:)*0+35*pi/180];
     tolx=1.e-9;
-    tolfun=1.e-9;
+    tolfun=5.e-4;
     maxiter=400;
 
     Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable);
-    x0.FaList = params.FaList;
-    x0.state  = evaluate(auxvariable ,x0);
-    mystate = evaluate( sumstatevariable ,x0);
-    Xfull = [ x0.FaList(:); x0.state(:)];
-    [MIobjfun,initVals.g] = problem.objective(Xfull);
-    [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
-    [myobjfun, myobjfun_Der]= Fx(InitialGuess)
-    %%   [designopt,fval,exitflag,output,lambda,grad,hessian] ...
-    %%    =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
-    %%       optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
-    %%       maxiter,'Display','iter-detailed',... 
-    %%       'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
+    %% debug info
+    %% x0.FaList = params.FaList;
+    %% x0.state  = evaluate(auxvariable ,x0);
+    %% mystate = evaluate( sumstatevariable ,x0);
+    %% Xfull = [ x0.FaList(:); x0.state(:)];
+    %% [MIobjfun,initVals.g] = problem.objective(Xfull);
+    %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
+    %% [myobjfun, myobjfun_Der]= Fx(InitialGuess)
+    [designopt,fval,exitflag,output,lambda,grad,hessian] ...
+     =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
+        optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
+        maxiter,'Display','iter-detailed',... 
+        'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
 
-    %% toc;
-    %% handle = figure(5)
-    %% optparams = params;
-    %% optparams.FaList = reshape(designopt(:),size(params.FaList ));
-    %% [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    %% figure(6)
-    %% plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
-    %% ylabel('MI Mxy')
-    %% xlabel('sec')
-    %% figure(7)
-    %% plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b',optparams.TRList,optparams.FaList(2,:)*180/pi,'k')
-    %% ylabel('MI FA')
-    %% xlabel('sec')
-    %% handle = figure(8)
-    %% plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
-    %% ylabel('MI Mz ')
-    %% xlabel('sec'); legend('Pyr','Lac')
+    toc;
+    handle = figure(5)
+    optparams = params;
+    optparams.FaList = reshape(designopt(:),size(params.FaList ));
+    [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
+    figure(6)
+    plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
+    ylabel('MI Mxy')
+    xlabel('sec')
+    figure(7)
+    plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b',optparams.TRList,optparams.FaList(2,:)*180/pi,'k')
+    ylabel('MI FA')
+    xlabel('sec')
+    handle = figure(8)
+    plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
+    ylabel('MI Mz ')
+    xlabel('sec'); legend('Pyr','Lac')
 end 
 
 
