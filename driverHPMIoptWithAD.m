@@ -100,9 +100,6 @@ if plotinit
 end
 
 
-%% compute TR's from TR_list
-TRi = getTR(TR_list); % vector of 'size(TR_list) - 1'
-
 %% optimize MI for TR and FA
 optf = true;
 if optf
@@ -118,7 +115,7 @@ if optf
     Nspecies = 2
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     TRList = TR_list;
-    NGauss  = 4
+    NGauss  = 3
     NumberUncertain=3;
     switch (NumberUncertain)
        case(3)
@@ -127,10 +124,9 @@ if optf
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     end 
     lqp=length(xn{1}(:));
-    statevariable = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
+    statevariable    = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
+    auxvariable      = optimexpr(    [Nspecies,Ntime,lqp]);
     stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
-    % scaling important for the optimization step length update
-    scalestate = 1.;
 
     modelSNR = 10 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
@@ -142,6 +138,7 @@ if optf
 
     disp('build state variable')
     stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
+    auxvariable(:,1,:) =0;
     for iqp = 1:lqp
       for iii = 1:Ntime-1
         switch (NumberUncertain)
@@ -188,82 +185,97 @@ if optf
         % mid-point rule integration
         aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
     kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand ;
-        stateconstraint(:,iii+1,iqp) = scalestate*statevariable(:,iii+1,iqp) ==  expATR *(scalestate*cos(FaList(:,iii)).*statevariable(:,iii,iqp ))   + aifterm ;
+        auxvariable(:,iii+1,iqp) =  expATR *(cos(FaList(:,iii)).*auxvariable(:,iii,iqp ))   + aifterm ;
+        stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii)).*statevariable(:,iii,iqp ))   + aifterm ;
       end
     end
 
     disp('build objective function')
     sumstatevariable = optimexpr([Nspecies,lqp]);
     for jjj = 1:lqp
-       sumstatevariable(:,jjj) =  sum(scalestate*sin(FaList).*statevariable(:,:,jjj),2);
+       sumstatevariable(:,jjj) =  sum(sin(FaList).*statevariable(:,:,jjj),2);
     end 
     %statematrix = optimexpr([lqp,lqp]);
     expandvar  = ones(1,lqp);
-    diffsummone = sumstatevariable(1,:)' * expandvar   - expandvar' * sumstatevariable(1,:);
-    diffsummtwo = sumstatevariable(2,:)' * expandvar   - expandvar' * sumstatevariable(2,:);
+    diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
     Hz = 0;
     for jjj=1:lqp2
       znu=xn2{1}(jjj) ;
-      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signu^2   - (znu + diffsummtwo).^2/2/signu^2  ) * wn(:)));
+      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+      %Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2                             ) * wn(:)));
     end
-    MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
+    %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
+    MIGaussObj = Hz;
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
     convprob = optimproblem('Objective',MIGaussObj , "Constraints",stateconstraint);
+    myidx = varindex(convprob )
     %% 
     % View the new problem.
     
     %show(convprob)
-    %problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjective');
+    problem = prob2struct(convprob,'ObjectiveFunctionName','reducedObjective','ConstraintFunctionName','reducedConstraint');
+    %% extraParamsobj = functions(problem.objective).workspace{1}.extraParams;
+    %% extraParamscon = functions(problem.nonlcon).workspace{1}.extraParams;
     %% 
     % Solve the new problem. The solution is essentially the same as before.
     
-    x0.FaList = params.FaList;
-    x0.state  = repmat( 1/scalestate * Mz./cos(params.FaList),1,1,lqp);
+
     % truthconstraint = infeasibility(stateconstraint,x0);
     myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-9,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
-    [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' , 'ConstraintDerivative', 'auto-reverse')
-    %[popt,fval,exitflag,output] = solve(convprob,x0 )
+    InitialGuess =  [flips(:)];   
+    pmin =  [flips(:)*0];     
+    pmax =  [flips(:)*0+35*pi/180];
+    tolx=1.e-9;
+    tolfun=1.e-9;
+    maxiter=400;
 
+    Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable);
+    x0.FaList = params.FaList;
+    x0.state  = evaluate(auxvariable ,x0);
+    Xfull = [ x0.FaList(:); x0.state(:)];
+    [MIobjfun,initVals.g] = problem.objective(Xfull);
+    [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
+    [myobjfun, myobjfun_Der]= Fx(InitialGuess)
+    %%   [designopt,fval,exitflag,output,lambda,grad,hessian] ...
+    %%    =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
+    %%       optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
+    %%       maxiter,'Display','iter-detailed',... 
+    %%       'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
 
-    toc;
-    handle = figure(5)
-
-    optparams = params;
-    optparams.FaList = popt.FaList;
-    [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    figure(6)
-    plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
-    ylabel('MI Mxy')
-    xlabel('sec')
-    figure(7)
-    plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b',optparams.TRList,optparams.FaList(2,:)*180/pi,'k')
-    ylabel('MI FA')
-    xlabel('sec')
-    handle = figure(8)
-    plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
-    hold
-    plot(optparams.TRList,scalestate* popt.state(1,:, 1),'b',optparams.TRList,scalestate* popt.state(2,:, 1),'k')
-    if(lqp > 1)
-      plot(optparams.TRList,scalestate* popt.state(1,:, 5),'b',optparams.TRList,scalestate* popt.state(2,:, 5),'k')
-      plot(optparams.TRList,scalestate* popt.state(1,:,10),'b',optparams.TRList,scalestate* popt.state(2,:,10),'k')
-      plot(optparams.TRList,scalestate* popt.state(1,:,15),'b',optparams.TRList,scalestate* popt.state(2,:,15),'k')
-    end
-    ylabel('MI Mz ')
-    xlabel('sec'); legend('Pyr','Lac')
+    %% toc;
+    %% handle = figure(5)
+    %% optparams = params;
+    %% optparams.FaList = reshape(designopt(:),size(params.FaList ));
+    %% [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
+    %% figure(6)
+    %% plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
+    %% ylabel('MI Mxy')
+    %% xlabel('sec')
+    %% figure(7)
+    %% plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b',optparams.TRList,optparams.FaList(2,:)*180/pi,'k')
+    %% ylabel('MI FA')
+    %% xlabel('sec')
+    %% handle = figure(8)
+    %% plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
+    %% ylabel('MI Mz ')
+    %% xlabel('sec'); legend('Pyr','Lac')
 end 
 
 
-%% convert time sequence to TR and TR to time sequence
-function TR = getTR(t)
-% compute TR from time sequence
-    N = size(t,2);
-    TR = zeros(1,N-1);
-    for i=1:(N-1)
-        TR(i) = t(i+1) - t(i);
-    end
+function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
+    x0.FaList = reshape(xopt,Nspecies,Ntime);
+    x0.state  = evaluate(auxvariable ,x0);
+    Xfull = [ x0.FaList(:); x0.state(:)];
+    [MIobjfun,initVals.g] = problem.objective(Xfull);
+    [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
+    objectiveGradFA    = initVals.g(myidx.FaList);
+    objectiveGradState = initVals.g(myidx.state);
+    jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
+    jacobianState = initConst.ceqGrad(myidx.state,:);
+    adjointvar =-jacobianState \objectiveGradState ;
+    MIobjfun_Der = objectiveGradFA +  jacobianFA *   adjointvar ;
 end
-

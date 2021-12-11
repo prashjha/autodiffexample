@@ -67,7 +67,9 @@ parfor iii=1:lqp
             
             Gkkk = Mmodel(kkk)';
             
-            f = wn(kkk) * mvnpdf(znu+Giii, Gkkk,covnu);
+            %f = wn(kkk) * mvnpdf(znu+Giii, Gkkk,covnu);
+            f = wn(kkk) * exp( -(znu+Giii- Gkkk)^2/2/covnu - log(signu) -log(2*pi)/2  );
+            %f = wn(kkk) * exp( -(znu+Giii- Gkkk)^2/2/covnu                            );
             lntermtmp=lntermtmp + f;
             % for derivative
             fact_der = (Gkkk - Giii - znu)/covnu;
@@ -107,11 +109,11 @@ end
 
 %%
 % Compute H(z|eta), which is a function of measurement noise
-Hzeta=.5*log((2*pi*2.7183)^5.*signu.^5);
+%Hzeta=.5*log((2*pi*2.7183)^5.*signu.^5);
 
 % Compute mutual information as the difference in entropy of the
 % evidence, H(z), and entropy of the likelihood, H(z|eta).
-MI=Hz_red-Hzeta;
+MI=Hz_red;
 
 % Make objective function negative, because optimization is minimizing
 % objective function and maximizing mutual information.

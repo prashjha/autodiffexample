@@ -5,38 +5,38 @@
 
 clear all
 clc
-driverHPMIoptadj(3,3, 2)
-driverHPMIoptadj(3,3, 5)
-driverHPMIoptadj(3,3, 8)
-driverHPMIoptadj(3,3,10)
-driverHPMIoptadj(3,3,12)
-driverHPMIoptadj(3,3,15)
-driverHPMIoptadj(3,3,20)
-driverHPMIoptadj(3,3,22)
-driverHPMIoptadj(3,3,25)
-driverHPMIoptadj(4,3, 2)
-driverHPMIoptadj(4,3, 5)
-driverHPMIoptadj(4,3, 8)
-driverHPMIoptadj(4,3,10)
-driverHPMIoptadj(4,3,12)
-driverHPMIoptadj(4,3,15)
-driverHPMIoptadj(4,3,20)
-driverHPMIoptadj(4,3,22)
-driverHPMIoptadj(4,3,25)
-driverHPMIoptadj(5,3, 2)
-driverHPMIoptadj(5,3, 5)
-driverHPMIoptadj(5,3, 8)
-driverHPMIoptadj(5,3,10)
-driverHPMIoptadj(5,3,12)
-driverHPMIoptadj(5,3,15)
-driverHPMIoptadj(5,3,20)
-driverHPMIoptadj(5,3,22)
-driverHPMIoptadj(5,3,25)
+% driverHPMIoptadj(3,3, 2)
+% driverHPMIoptadj(3,3, 5)
+% driverHPMIoptadj(3,3, 8)
+% driverHPMIoptadj(3,3,10)
+% driverHPMIoptadj(3,3,12)
+% driverHPMIoptadj(3,3,15)
+% driverHPMIoptadj(3,3,20)
+% driverHPMIoptadj(3,3,22)
+% driverHPMIoptadj(3,3,25)
+% driverHPMIoptadj(4,3, 2)
+% driverHPMIoptadj(4,3, 5)
+% driverHPMIoptadj(4,3, 8)
+% driverHPMIoptadj(4,3,10)
+% driverHPMIoptadj(4,3,12)
+% driverHPMIoptadj(4,3,15)
+% driverHPMIoptadj(4,3,20)
+% driverHPMIoptadj(4,3,22)
+% driverHPMIoptadj(4,3,25)
+% driverHPMIoptadj(5,3, 2)
+% driverHPMIoptadj(5,3, 5)
+% driverHPMIoptadj(5,3, 8)
+% driverHPMIoptadj(5,3,10)
+% driverHPMIoptadj(5,3,12)
+% driverHPMIoptadj(5,3,15)
+% driverHPMIoptadj(5,3,20)
+% driverHPMIoptadj(5,3,22)
+% driverHPMIoptadj(5,3,25)
 
-function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
+%% function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
   close all
-  %% NGauss=3,NumberUncertain=3,SignalNoiseMI =10
-  NGauss,NumberUncertain,SignalNoiseMI 
+  NGauss=3,NumberUncertain=3,SignalNoiseMI =10
+  %% NGauss,NumberUncertain,SignalNoiseMI 
 
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
@@ -202,37 +202,38 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       % fn
       Fx = @(x) MI_GHQuad_HPTofts_With_Der_Parallel_old_method(x, M0, params, model, NumberUncertain, xn, wn, xn2, wn2, T1Pqp, T1Lqp, kplqp, klpqp, kveqp, t0qp);
   
-      tic;
-      [designopt,fval,exitflag,output,lambda,grad,hessian] ...
-       =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
-          optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
-          maxiter,'Display','iter-detailed',... 
-          'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
-      toc;
+      [myobjfun, myobjfun_Der]= Fx(InitialGuess)
+      %% tic;
+      %% [designopt,fval,exitflag,output,lambda,grad,hessian] ...
+      %%  =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
+      %%     optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
+      %%     maxiter,'Display','iter-detailed',... 
+      %%     'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
+      %% toc;
   
-      % save convergence history
-      handle = figure(5)
-      saveas(handle,sprintf('historyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI ),'png')
-      popt.FaList = reshape(designopt(1:end),size(params.FaList ));
-      optparams = params;
-      optparams.FaList = popt.FaList;
-      [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
-      handle = figure(10)
-      plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
-      ylabel('adj MI Mxy')
-      xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMxyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
-      handle = figure(11)
-      plot(params.TRList,optparams.FaList(1,:)*180/pi,'b',params.TRList,optparams.FaList(2,:)*180/pi,'k')
-      ylabel('adj MI FA (deg)')
-      xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptFANG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
-      handle = figure(12)
-      plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
-      ylabel('adj MI Mz ')
-      xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMzNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+      %% % save convergence history
+      %% handle = figure(5)
+      %% saveas(handle,sprintf('historyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI ),'png')
+      %% popt.FaList = reshape(designopt(1:end),size(params.FaList ));
+      %% optparams = params;
+      %% optparams.FaList = popt.FaList;
+      %% [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
+      %% save(sprintf('poptNG%dNu%dadjSNR%02d.mat',NGauss,NumberUncertain,SignalNoiseMI) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
+      %% handle = figure(10)
+      %% plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
+      %% ylabel('adj MI Mxy')
+      %% xlabel('sec'); legend('Pyr','Lac')
+      %% saveas(handle,sprintf('OptMxyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+      %% handle = figure(11)
+      %% plot(params.TRList,optparams.FaList(1,:)*180/pi,'b',params.TRList,optparams.FaList(2,:)*180/pi,'k')
+      %% ylabel('adj MI FA (deg)')
+      %% xlabel('sec'); legend('Pyr','Lac')
+      %% saveas(handle,sprintf('OptFANG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
+      %% handle = figure(12)
+      %% plot(params.TRList,Mzopt(1,:),'b',params.TRList,Mzopt(2,:),'k')
+      %% ylabel('adj MI Mz ')
+      %% xlabel('sec'); legend('Pyr','Lac')
+      %% saveas(handle,sprintf('OptMzNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
   end 
   
   %% convert time sequence to TR and TR to time sequence
@@ -290,6 +291,6 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       fprintf(fileID,'%u,%u,%16.14e \r\n',optimValues.iteration,optimValues.funccount, optimValues.fval);
   end
   
-end
+%% end
 
 
