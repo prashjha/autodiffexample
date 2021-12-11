@@ -57,8 +57,8 @@ clc
   
   
   %% Variable Setup
-  Ntime = 40;
-  TR = 2;
+  Ntime = 30;
+  TR = 3;
   TR_list = (0:(Ntime-1))*TR;
   M0 = [0,0];
   %ve = 0.95;

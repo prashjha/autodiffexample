@@ -25,8 +25,8 @@ betasttd  =  [.3];
 tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
 
 %% Variable Setup
-Ntime = 23;
-TR = 2;
+Ntime = 30;
+TR = 3;
 TR_list = (0:(Ntime-1))*TR;
 M0 = [0,0];
 %ve = 0.95;
@@ -236,6 +236,7 @@ if optf
     Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable);
     x0.FaList = params.FaList;
     x0.state  = evaluate(auxvariable ,x0);
+    mystate = evaluate( sumstatevariable ,x0);
     Xfull = [ x0.FaList(:); x0.state(:)];
     [MIobjfun,initVals.g] = problem.objective(Xfull);
     [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
