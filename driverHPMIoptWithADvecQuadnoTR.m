@@ -6,52 +6,42 @@
 clear all
 clc
 
-myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
-%% driverHPMIopt(3,3, 2,myoptions)
-%% driverHPMIopt(3,3, 5,myoptions)
-%% driverHPMIopt(3,3, 8,myoptions)
-%% driverHPMIopt(3,3,10,myoptions)
-%% driverHPMIopt(3,3,12,myoptions)
-%% driverHPMIopt(3,3,15,myoptions)
-%% driverHPMIopt(3,3,20,myoptions)
-%% driverHPMIopt(3,3,22,myoptions)
-%% driverHPMIopt(3,3,25,myoptions)
-%% %driverHPMIopt(4,3, 2,myoptions)
-%% %driverHPMIopt(4,3, 5,myoptions)
-%% %driverHPMIopt(4,3, 8,myoptions)
-%% %driverHPMIopt(4,3,10,myoptions)
-%% %driverHPMIopt(4,3,12,myoptions)
-%% %driverHPMIopt(4,3,15,myoptions)
-%% %driverHPMIopt(4,3,20,myoptions)
-%% %driverHPMIopt(4,3,22,myoptions)
-%% %driverHPMIopt(4,3,25,myoptions)
-%% %driverHPMIopt(5,3,10,myoptions)
+myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
+driverHPMIopt(3,3, 2,myoptions)
+driverHPMIopt(3,3,10,myoptions)
+driverHPMIopt(3,3,20,myoptions)
+driverHPMIopt(3,3,25,myoptions)
+
+myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
+driverHPMIopt(3,3, 2,myoptions)
+driverHPMIopt(3,3,10,myoptions)
+driverHPMIopt(3,3,20,myoptions)
+driverHPMIopt(3,3,25,myoptions)
+
+mynewoptions.Algorithm = 'constDirect'
+driverHPMIopt(3,3, 2,mynewoptions)
+driverHPMIopt(3,3,10,mynewoptions)
+driverHPMIopt(3,3,20,mynewoptions)
+driverHPMIopt(3,3,25,mynewoptions)
+
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','StepTolerance',1.000000e-16)
-%% myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
-%% driverHPMIopt(3,3, 2,myoptions)
-%% driverHPMIopt(3,3, 5,myoptions)
-%% driverHPMIopt(3,3, 8,myoptions)
-%% driverHPMIopt(3,3,10,myoptions)
-%% driverHPMIopt(3,3,12,myoptions)
-%% driverHPMIopt(3,3,15,myoptions)
-%% driverHPMIopt(3,3,20,myoptions)
-%% driverHPMIopt(3,3,22,myoptions)
-%% driverHPMIopt(3,3,25,myoptions)
-%% % driverHPMIopt(4,3, 2,myoptions)
-%% % driverHPMIopt(4,3, 5,myoptions)
-%% % driverHPMIopt(4,3, 8,myoptions)
-%% % driverHPMIopt(4,3,10,myoptions)
-%% % driverHPMIopt(4,3,12,myoptions)
-%% % driverHPMIopt(4,3,15,myoptions)
-%% % driverHPMIopt(4,3,20,myoptions)
-%% % driverHPMIopt(4,3,22,myoptions)
-%% % driverHPMIopt(4,3,25,myoptions)
-%% %driverHPMIopt(5,3,10,myoptions)
+%driverHPMIopt(4,3, 2,myoptions)
+%driverHPMIopt(4,3, 5,myoptions)
+%driverHPMIopt(4,3, 8,myoptions)
+%driverHPMIopt(4,3,10,myoptions)
+%driverHPMIopt(4,3,12,myoptions)
+%driverHPMIopt(4,3,15,myoptions)
+%driverHPMIopt(4,3,20,myoptions)
+%driverHPMIopt(4,3,22,myoptions)
+%driverHPMIopt(4,3,25,myoptions)
+%driverHPMIopt(5,3,10,myoptions)
+
+
 %% % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
-%function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
-  NGauss = 3,NumberUncertain=3,modelSNR=10
+function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
+ % NGauss = 3,NumberUncertain=3,modelSNR=10
 
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm
   close all
@@ -94,7 +84,6 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
   
   %% Get true Mz
   %% Choose Excitation Angle
-  FAType = {'WarmStart'};
   FAType = {'Const'};
   %% HACK- @cmwalker code for initial conditions - https://github.com/fuentesdt/TumorHPMRI/blob/master/models/gPC/walker/ShowMxyPub.m
   for i = 1:numel(FAType)
@@ -108,13 +97,7 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
                   flips(2,n) = 15*pi/180;
                   flips(1,n) = 20*pi/180;
               end
-              dbgoptflips  =[ 0.3873    0.3876    0.4299    0.5295    0.5512    0.5510    0.5618    0.5783    0.5772    0.5890    0.5853 0.5847    0.5657    0.5724    0.6042    0.5874    0.5597    0.5299    0.5020    0.4777    0.4578    0.4420    0.4297; 0.2236    0.2236    0.2297    0.2691    0.3527    0.4070    0.4150    0.4132    0.4151    0.4201    0.4267 0.4346    0.4433    0.4534    0.4657    0.4825    0.5071    0.5418    0.5779    0.5999    0.6040    0.6058    0.6068 ];
-  
-              params.FaList = dbgoptflips ;
               params.FaList = flips ;
-          case('WarmStart') % Nagashima for lactate const 10 pyruvate
-              warmstart = load('poptNG4Nu3sqpSNR10.mat');
-              params.FaList = warmstart.popt.FaList;
       end
   
       
@@ -263,6 +246,7 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
           stateconstraint(iii+1,2,:)  = statevariable(iii+1,2,:) ==  reshape(cos(FaList(2,iii))*expATRtwotwo.* squeeze( statevariable(iii,2,: ) ),1,1,lqp ) + reshape( sum(aiftermlac,2 ),1,1,lqp) +reshape( cos(FaList(1,iii))*expATRtwoone.* squeeze( statevariable(iii,1,: )  ),1,1,lqp) ; 
       end
   
+
       disp('build objective function')
       % TODO - repmat does not work well with AD
       % TODO - replace repmat with matrix
@@ -299,29 +283,6 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
       %show(convprob)
       problem = prob2struct(convprob,'ObjectiveFunctionName','reducedObjective','ConstraintFunctionName','reducedConstraint');
       
-      InitialGuess =  [flips(:)];   
-      pmin =  [flips(:)*0];     
-      pmax =  [flips(:)*0+35*pi/180];
-      tolx=1.e-9;
-      tolfun=5.e-4;
-      maxiter=400;
-  
-      % truthconstraint = infeasibility(stateconstraint,x0);
-      %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
-      Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable);
-      [designopt,fval,exitflag,output,lambda,grad,hessian] ...
-       =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
-        optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
-        maxiter,'Display','iter-detailed',... 
-        'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }) ...
-        );
-  
-      toc;
-      % save convergence history
-      handle = figure(5)
-      saveas(handle,sprintf('historyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR ),'png')
-      % save solution
-      optparams = params;
 
       % compare walker solution at qp
       switch (NumberUncertain)
@@ -335,9 +296,61 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
          case(5)
            error("WIP")
       end
-      optparams.FaList = reshape(designopt(:),size(params.FaList ));
-      popt.FaList      = reshape(designopt(:),size(params.FaList ));
+      % solve
+      switch (myoptions.Algorithm)
+          case('constDirect') 
+             % const FA constraints - use direct search instead
+             %% Aeq=eye(length(InitialGuess));
+             %% Aeq(:,end  )=repmat([0;-1],Ntime,1);
+             %% Aeq(:,end-1)=repmat([-1;0],Ntime,1);
+             %% Aeq= Aeq(1:end-Nspecies,:); 
+             %% beq=zeros(length(InitialGuess)-Nspecies,1);
+             [pyrgrid,lacgrid] = meshgrid(0:1:35,0:1:35);
+             brutesearch= zeros(size(pyrgrid));
+             for iii = 1:length(pyrgrid(:))
+                 disp(sprintf('%d %d ',pyrgrid(iii),lacgrid(iii)));
+                 x0.FaList = repmat([pi/180*pyrgrid(iii);pi/180*lacgrid(iii)],1,Ntime);
+                 x0.state  = evaluate(auxvariable ,x0);
+                 brutesearch(iii) = evaluate(MIGaussObj,x0);
+             end
+             [maxMI,idmax] = max(brutesearch(:));
+             [minMI,idmin] = min(brutesearch(:));
+             popt.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
+             pneg.FaList = repmat([pi/180*pyrgrid(idmax);pi/180*lacgrid(idmax)],1,Ntime);
+             optparams.FaList =  repmat([pi/180*pyrgrid(idmax);pi/180*lacgrid(idmax)],1,Ntime);
+  
+             handle = figure(5)
+             imagesc(brutesearch)
+             colorbar
+             xlabel('FA Pyruvate - deg')
+             ylabel('FA Lactate - deg')
+             title('MI optimization surface')
+             text(pyrgrid(idmin)+1,lacgrid(idmin)+1, 'opt');
+             text(pyrgrid(idmax)+1,lacgrid(idmax)+1, 'control');
+          otherwise
+             InitialGuess =  [flips(:)];   
+             pmin =  [flips(:)*0];     
+             pmax =  [flips(:)*0+35*pi/180];
+             tolx=1.e-9;
+             tolfun=5.e-4;
+             maxiter=400;
+  
+             % truthconstraint = infeasibility(stateconstraint,x0);
+             %[popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ConstraintDerivative', 'auto-reverse', 'ObjectiveDerivative', 'auto-reverse' )
+             Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable);
+             [designopt,fval,exitflag,output,lambda,grad,hessian] ...
+              =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],myoptions);
+
+             handle = figure(5)
+             optparams.FaList = reshape(designopt(:),size(params.FaList ));
+             popt.FaList      = reshape(designopt(:),size(params.FaList ));
+      end
+      % save convergence history
+      saveas(handle,sprintf('historyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR ),'png')
       popt.state       = evaluate(auxvariable, popt);
+      toc;
+
+
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
       save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
       handle = figure(10)
@@ -365,7 +378,7 @@ myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGra
   end 
 
 
-%end
+end
 function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
     x0.FaList = reshape(xopt,Nspecies,Ntime);
     x0.state  = evaluate(auxvariable ,x0);
