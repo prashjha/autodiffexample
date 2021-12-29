@@ -7,14 +7,14 @@ clear all
 clc
 
 mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(3,3, 2,mynewoptions,'SumTimepoints')
-driverHPMIopt(3,3,10,mynewoptions,'SumTimepoints')
-driverHPMIopt(3,3,20,mynewoptions,'SumTimepoints')
-driverHPMIopt(3,3,25,mynewoptions,'SumTimepoints')
 driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3, 2,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3,10,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3,20,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3,25,mynewoptions,'SumTimepoints')
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
 driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
@@ -56,7 +56,7 @@ driverHPMIopt(3,3,25,myoptions,'SumTimepoints')
 function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
  % NGauss = 3,NumberUncertain=3,modelSNR=10
 
-  NGauss,NumberUncertain,modelSNR,myoptions.Algorithm
+  NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType
   close all
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
@@ -273,23 +273,25 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
                sumstatevariable(:,jjj) =  sum(sin(FaList)'.*statevariable(:,:,jjj),1)';
             end 
             diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
-            Hz = 0;
+            negHz = 0;
             for jjj=1:lqp2
               znu=xn2{1}(jjj) ;
-              Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+              negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
             end
           case('SumTimepoints')
-            Hz = 0;
+            negHz = 0;
             for jjj=1:lqp2
               znu=xn2{1}(jjj) ;
               for kkk  =1:Ntime 
                  diffsummone = (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:)))  * expandvar   - expandvar' * (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:))') ;
                  diffsummtwo = (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:)))  * expandvar   - expandvar' * (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:))') ;
-                 Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signuImage^2   - (znu + diffsummtwo).^2/2/signuImage^2  ) * wn(:)));
+                 negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signuImage^2   - (znu + diffsummtwo).^2/2/signuImage^2  ) * wn(:)));
               end
             end
       end
-      MIGaussObj = Hz;
+      % MI = H(z) - H(z|P) 
+      %  H(z|P)  constant ==> max MI = max H(z) = min -H(z)
+      MIGaussObj = negHz;
   
       %% 
       % Create an optimization problem using these converted optimization expressions.
