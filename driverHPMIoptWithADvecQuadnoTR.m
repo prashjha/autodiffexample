@@ -7,34 +7,26 @@ clear all
 clc
 
 mynewoptions.Algorithm = 'constDirect'
+driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
+driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
+driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
+driverHPMIopt(3,3,25,mynewoptions,'MaxSignal')
 driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3, 2,mynewoptions,'SumTimepoints')
-driverHPMIopt(3,3,10,mynewoptions,'SumTimepoints')
-driverHPMIopt(3,3,20,mynewoptions,'SumTimepoints')
-driverHPMIopt(3,3,25,mynewoptions,'SumTimepoints')
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
 driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
 driverHPMIopt(3,3,10,myoptions,'TotalSignal')
 driverHPMIopt(3,3,20,myoptions,'TotalSignal')
 driverHPMIopt(3,3,25,myoptions,'TotalSignal')
-driverHPMIopt(3,3, 2,myoptions,'SumTimepoints')
-driverHPMIopt(3,3,10,myoptions,'SumTimepoints')
-driverHPMIopt(3,3,20,myoptions,'SumTimepoints')
-driverHPMIopt(3,3,25,myoptions,'SumTimepoints')
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
 driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
 driverHPMIopt(3,3,10,myoptions,'TotalSignal')
 driverHPMIopt(3,3,20,myoptions,'TotalSignal')
 driverHPMIopt(3,3,25,myoptions,'TotalSignal')
-driverHPMIopt(3,3, 2,myoptions,'SumTimepoints')
-driverHPMIopt(3,3,10,myoptions,'SumTimepoints')
-driverHPMIopt(3,3,20,myoptions,'SumTimepoints')
-driverHPMIopt(3,3,25,myoptions,'SumTimepoints')
 
 
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
@@ -287,6 +279,19 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
                  diffsummtwo = (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:)))  * expandvar   - expandvar' * (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:))') ;
                  negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signuImage^2   - (znu + diffsummtwo).^2/2/signuImage^2  ) * wn(:)));
               end
+            end
+          % https://keplerlounge.com/applied-math/2020/02/13/analytic-min-max.html
+          % approximate max
+          case('MaxSignal')
+            maxstatevariable = optimexpr([Nspecies,lqp]);
+            for jjj = 1:lqp
+               maxstatevariable(:,jjj) =  mean((sin(FaList)'.*statevariable(:,:,jjj)).^(100),1).^(1/100)';
+            end 
+            diffsumm =(maxstatevariable(1,:)+maxstatevariable(2,:))' * expandvar   - expandvar' * (maxstatevariable(1,:)+maxstatevariable(2,:));
+            negHz = 0;
+            for jjj=1:lqp2
+              znu=xn2{1}(jjj) ;
+              negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
             end
       end
       % MI = H(z) - H(z|P) 
