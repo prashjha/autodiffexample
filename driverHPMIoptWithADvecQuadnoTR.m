@@ -6,23 +6,36 @@
 clear all
 clc
 
+mynewoptions.Algorithm = 'constDirect'
+driverHPMIopt(3,3, 2,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3,10,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3,20,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3,25,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
+
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
-driverHPMIopt(3,3, 2,myoptions)
-driverHPMIopt(3,3,10,myoptions)
-driverHPMIopt(3,3,20,myoptions)
-driverHPMIopt(3,3,25,myoptions)
+driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
+driverHPMIopt(3,3,10,myoptions,'TotalSignal')
+driverHPMIopt(3,3,20,myoptions,'TotalSignal')
+driverHPMIopt(3,3,25,myoptions,'TotalSignal')
+driverHPMIopt(3,3, 2,myoptions,'SumTimepoints')
+driverHPMIopt(3,3,10,myoptions,'SumTimepoints')
+driverHPMIopt(3,3,20,myoptions,'SumTimepoints')
+driverHPMIopt(3,3,25,myoptions,'SumTimepoints')
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
-driverHPMIopt(3,3, 2,myoptions)
-driverHPMIopt(3,3,10,myoptions)
-driverHPMIopt(3,3,20,myoptions)
-driverHPMIopt(3,3,25,myoptions)
+driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
+driverHPMIopt(3,3,10,myoptions,'TotalSignal')
+driverHPMIopt(3,3,20,myoptions,'TotalSignal')
+driverHPMIopt(3,3,25,myoptions,'TotalSignal')
+driverHPMIopt(3,3, 2,myoptions,'SumTimepoints')
+driverHPMIopt(3,3,10,myoptions,'SumTimepoints')
+driverHPMIopt(3,3,20,myoptions,'SumTimepoints')
+driverHPMIopt(3,3,25,myoptions,'SumTimepoints')
 
-mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(3,3, 2,mynewoptions)
-driverHPMIopt(3,3,10,mynewoptions)
-driverHPMIopt(3,3,20,mynewoptions)
-driverHPMIopt(3,3,25,mynewoptions)
 
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','StepTolerance',1.000000e-16)
@@ -40,7 +53,7 @@ driverHPMIopt(3,3,25,mynewoptions)
 
 %% % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
-function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
+function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
  % NGauss = 3,NumberUncertain=3,modelSNR=10
 
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm
@@ -248,28 +261,33 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
   
 
       disp('build objective function')
-      % TODO - repmat does not work well with AD
-      % TODO - replace repmat with matrix
-      % sumstatevariable = squeeze(sum(repmat(sin(FaList)',1,1,lqp).*statevariable,1));
-      sumstatevariable = optimexpr([Nspecies,lqp]);
-      for jjj = 1:lqp
-         sumstatevariable(:,jjj) =  sum(sin(FaList)'.*statevariable(:,:,jjj),1)';
-      end 
-      %statematrix = optimexpr([lqp,lqp]);
-      %lqpchoosetwo = nchoosek(1:lqp,2);
-      %arraypermutationsjjj = repmat([1:lqp]',1,lqp) ;
-      %arraypermutationsiii = repmat([1:lqp] ,lqp,1) ;
-      %lqpchoosetwo = [arraypermutationsiii(:), arraypermutationsjjj(:)];
-      %diffsummone = sumstatevariable(1,lqpchoosetwo(:,1)) - sumstatevariable(1,lqpchoosetwo(:,2));
-      %diffsummtwo = sumstatevariable(2,lqpchoosetwo(:,1)) - sumstatevariable(2,lqpchoosetwo(:,2));
-      %diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
-      %diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
       expandvar  = ones(1,lqp);
-      diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
-      Hz = 0;
-      for jjj=1:lqp2
-        znu=xn2{1}(jjj) ;
-        Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+
+      switch (ObjectiveType)
+          case('TotalSignal')
+            % TODO - repmat does not work well with AD
+            % TODO - replace repmat with matrix
+            % sumstatevariable = squeeze(sum(repmat(sin(FaList)',1,1,lqp).*statevariable,1));
+            sumstatevariable = optimexpr([Nspecies,lqp]);
+            for jjj = 1:lqp
+               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*statevariable(:,:,jjj),1)';
+            end 
+            diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
+            Hz = 0;
+            for jjj=1:lqp2
+              znu=xn2{1}(jjj) ;
+              Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+            end
+          case('SumTimepoints')
+            Hz = 0;
+            for jjj=1:lqp2
+              znu=xn2{1}(jjj) ;
+              for kkk  =1:Ntime 
+                 diffsummone = (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:)))  * expandvar   - expandvar' * (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:))') ;
+                 diffsummtwo = (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:)))  * expandvar   - expandvar' * (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:))') ;
+                 Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signuImage^2   - (znu + diffsummtwo).^2/2/signuImage^2  ) * wn(:)));
+              end
+            end
       end
       MIGaussObj = Hz;
   
@@ -307,8 +325,15 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
              %% beq=zeros(length(InitialGuess)-Nspecies,1);
              [pyrgrid,lacgrid] = meshgrid(0:1:35,0:1:35);
              brutesearch= zeros(size(pyrgrid));
+             backspaces = '';
              for iii = 1:length(pyrgrid(:))
-                 disp(sprintf('%d %d ',pyrgrid(iii),lacgrid(iii)));
+                 %disp(sprintf('%d %d ',pyrgrid(iii),lacgrid(iii)));
+                 % Print percentage progress
+                 percentage = iii/length(pyrgrid(:));
+                 perc_str = sprintf('completed %3.1f', percentage);
+                 fprintf([backspaces, perc_str]);
+                 backspaces = repmat(sprintf('\b'), 1, length(perc_str));
+
                  x0.FaList = repmat([pi/180*pyrgrid(iii);pi/180*lacgrid(iii)],1,Ntime);
                  x0.state  = evaluate(auxvariable ,x0);
                  brutesearch(iii) = evaluate(MIGaussObj,x0);
@@ -317,7 +342,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
              [minMI,idmin] = min(brutesearch(:));
              popt.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
              pneg.FaList = repmat([pi/180*pyrgrid(idmax);pi/180*lacgrid(idmax)],1,Ntime);
-             optparams.FaList =  repmat([pi/180*pyrgrid(idmax);pi/180*lacgrid(idmax)],1,Ntime);
+             optparams.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
   
              handle = figure(5)
              imagesc(brutesearch)
@@ -346,23 +371,23 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
              popt.FaList      = reshape(designopt(:),size(params.FaList ));
       end
       % save convergence history
-      saveas(handle,sprintf('historyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR ),'png')
+      saveas(handle,sprintf('historyNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR ),'png')
       popt.state       = evaluate(auxvariable, popt);
       toc;
 
 
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%d%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
+      save(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('MI Mxy')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMxyNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptMxyNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
       handle = figure(11)
       plot(params.TRList,popt.FaList(1,:)*180/pi,'b',params.TRList,popt.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptFANG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptFANG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
       handle = figure(12)
       plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
       hold
@@ -374,7 +399,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       %end
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMzNG%dNu%d%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptMzNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
   end 
 
 

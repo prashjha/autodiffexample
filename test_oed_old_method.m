@@ -5,37 +5,22 @@
 
 clear all
 clc
-% driverHPMIoptadj(3,3, 2)
-% driverHPMIoptadj(3,3, 5)
-% driverHPMIoptadj(3,3, 8)
-% driverHPMIoptadj(3,3,10)
-% driverHPMIoptadj(3,3,12)
-% driverHPMIoptadj(3,3,15)
-% driverHPMIoptadj(3,3,20)
-% driverHPMIoptadj(3,3,22)
-% driverHPMIoptadj(3,3,25)
-% driverHPMIoptadj(4,3, 2)
-% driverHPMIoptadj(4,3, 5)
-% driverHPMIoptadj(4,3, 8)
-% driverHPMIoptadj(4,3,10)
-% driverHPMIoptadj(4,3,12)
-% driverHPMIoptadj(4,3,15)
-% driverHPMIoptadj(4,3,20)
-% driverHPMIoptadj(4,3,22)
-% driverHPMIoptadj(4,3,25)
-% driverHPMIoptadj(5,3, 2)
-% driverHPMIoptadj(5,3, 5)
-% driverHPMIoptadj(5,3, 8)
-% driverHPMIoptadj(5,3,10)
-% driverHPMIoptadj(5,3,12)
-% driverHPMIoptadj(5,3,15)
-% driverHPMIoptadj(5,3,20)
-% driverHPMIoptadj(5,3,22)
-% driverHPMIoptadj(5,3,25)
+driverHPMIoptadj(3,3, 2)
+driverHPMIoptadj(3,3,10)
+driverHPMIoptadj(3,3,20)
+driverHPMIoptadj(3,3,25)
+driverHPMIoptadj(4,3, 2)
+driverHPMIoptadj(4,3,10)
+driverHPMIoptadj(4,3,20)
+driverHPMIoptadj(4,3,25)
+driverHPMIoptadj(5,3, 2)
+driverHPMIoptadj(5,3,10)
+driverHPMIoptadj(5,3,20)
+driverHPMIoptadj(5,3,25)
 
-%% function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
+function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
   close all
-  NGauss=3,NumberUncertain=3,SignalNoiseMI =10
+  %% NGauss=3,NumberUncertain=3,SignalNoiseMI =10
   %% NGauss,NumberUncertain,SignalNoiseMI 
 
   %% Tissue Parameters
@@ -293,6 +278,6 @@ clc
       fprintf(fileID,'%u,%u,%16.14e \r\n',optimValues.iteration,optimValues.funccount, optimValues.fval);
   end
   
-%% end
+end
 
 
