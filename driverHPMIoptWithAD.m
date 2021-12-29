@@ -178,6 +178,13 @@ if optf
         % [                                                              exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0]
         % [(kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)]
         %    
+        % linear approximation of aif    
+        % >> syms tk tkm1 tau a gammak gammakm1
+        % >> 
+        % >> aifexpr = exp(a*(tk-tau)) *  (gammak * (tau - tkm1)/(tk-tkm1 ) + gammakm1 * (tk - tau )/(tk-tkm1 ) )  
+        % >> aifint = int(aifexpr,tau,tkm1,tk)
+        % aifint = -(gammak - gammakm1 - gammak*exp(a*tk - a*tkm1) + gammakm1*exp(a*tk - a*tkm1) + a*gammak*tk - a*gammak*tkm1 - a*gammakm1*tk*exp(a*tk - a*tkm1) + a*gammakm1*tkm1*exp(a*tk - a*tkm1))/(a^2*(tk - tkm1))
+
         expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
         % mid-point rule integration
         aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
@@ -242,7 +249,9 @@ if optf
      =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
         optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
         maxiter,'Display','iter-detailed',... 
-        'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
+        'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }) ...
+        );
+        %optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',5.e-4,'Algorithm','sqp','StepTolerance',1.000000e-9,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
 
     toc;
     handle = figure(5)

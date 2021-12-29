@@ -210,6 +210,7 @@ clc
           optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
           maxiter,'Display','iter-detailed',... 
           'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
+        %optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',5.e-4,'Algorithm','sqp','StepTolerance',1.000000e-9,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg'));
       toc;
   
       % save convergence history
