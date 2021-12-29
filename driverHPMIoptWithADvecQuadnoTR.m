@@ -11,6 +11,10 @@ driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
 driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
 driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
 driverHPMIopt(3,3,25,mynewoptions,'MaxSignal')
+driverHPMIopt(3,3, 2,mynewoptions,'MaxSignalDiff')
+driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
+driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
+driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
 driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
@@ -288,6 +292,17 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
                maxstatevariable(:,jjj) =  mean((sin(FaList)'.*statevariable(:,:,jjj)).^(100),1).^(1/100)';
             end 
             diffsumm =(maxstatevariable(1,:)+maxstatevariable(2,:))' * expandvar   - expandvar' * (maxstatevariable(1,:)+maxstatevariable(2,:));
+            negHz = 0;
+            for jjj=1:lqp2
+              znu=xn2{1}(jjj) ;
+              negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+            end
+          case('MaxSignalDiff')
+            maxstatevariable = optimexpr([Nspecies,lqp]);
+            for jjj = 1:lqp
+               maxstatevariable(:,jjj) =  mean((sin(FaList)'.*statevariable(:,:,jjj)).^(100),1).^(1/100)';
+            end 
+            diffsumm =(maxstatevariable(1,:)-maxstatevariable(2,:))' * expandvar   - expandvar' * (maxstatevariable(1,:)-maxstatevariable(2,:));
             negHz = 0;
             for jjj=1:lqp2
               znu=xn2{1}(jjj) ;
