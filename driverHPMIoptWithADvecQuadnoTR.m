@@ -7,6 +7,10 @@ clear all
 clc
 
 mynewoptions.Algorithm = 'constDirect'
+driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
 driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
 driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
@@ -15,10 +19,6 @@ driverHPMIopt(3,3, 2,mynewoptions,'MaxSignalDiff')
 driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
 driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
 driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
-driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
 driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
@@ -371,8 +371,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
              colorbar
              xlabel('FA Pyruvate - deg')
              ylabel('FA Lactate - deg')
-             title('MI optimization surface')
-             text(pyrgrid(idmin)+1,lacgrid(idmin)+1, 'opt');
+             title(sprintf('MI optimization surface max %f min %f',maxMI,minMI) )
+             text(pyrgrid(idmin)+1,lacgrid(idmin)+1, sprintf('opt %d %d', pyrgrid(idmin), lacgrid(idmin)));
              text(pyrgrid(idmax)+1,lacgrid(idmax)+1, 'control');
           otherwise
              InitialGuess =  [flips(:)];   

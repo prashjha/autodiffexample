@@ -4,13 +4,14 @@ clc
 
 
 solverType = {'adj'};
-solverType = {'negsqp','neginterior-point','constsqp','constinterior-point','sumsqp','suminterior-point','adj','sqp','interior-point'};
+solverType = {'constDirect','sqp','interior-point'};
+ObjectiveType = {'TotalSignal'}
 gpList = [3, 4,5]
-gpList = [4]
+gpList = [3]
 uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
-snrList = [2,5,10,15,20,25]
+snrList = [2,10,20,25]
 numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + length(snrList)
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[]);
 icount  = 0;
@@ -18,7 +19,7 @@ for isolver = 1:numel(solverType)
  for igp = 1:length(gpList)
   for inu = 1:length(uncertainList)
    for isnr = 1:length(snrList)
-      worktmp = load(sprintf('poptNG%dNu%d%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},snrList(isnr)));
+      worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{1},snrList(isnr)));
       icount= icount+1;
       solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyopt, 'Mz',worktmp.Mzopt,'signuImage',worktmp.signuImage,'signu',worktmp.signu);
    end
@@ -35,8 +36,8 @@ end
 
 % extract timehistory info
 num_trials = 25;
-Ntime = 23;
-Nspecies = 2;
+Ntime    = size(solnList(1).Mz,2);
+Nspecies = size(solnList(1).Mz,1);
 timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)
