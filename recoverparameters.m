@@ -21,7 +21,7 @@ for isolver = 1:numel(solverType)
    for isnr = 1:length(snrList)
       worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{1},snrList(isnr)));
       icount= icount+1;
-      solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyopt, 'Mz',worktmp.Mzopt,'signuImage',worktmp.signuImage,'signu',worktmp.signu);
+      solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu);
    end
   end
  end
@@ -284,6 +284,7 @@ for idesign = 1:length(solnList)
        xlabel('sec')
        title('curvefit ')
        legend('walker+rice','','walker','','ic','','truth','','df','')
+       set(gca,'FontSize',16)
        pause(.1)
        end 
 
@@ -291,12 +292,7 @@ for idesign = 1:length(solnList)
    end 
 
 end 
-%%
-%%
-idplot = (num_trials+1)* length(solnList)+1;
-figure(idplot )
-labellist = sprintfc('snr%02d',snrList); labellist{end+1} = 'const'
-boxplot( [ storekplopt(1:num_trials,1:length(snrList)), storekplopt(1:num_trials,end)], labellist  )
+
 
 %   Various line types, plot symbols and colors may be obtained with
 %   PLOT(X,Y,S) where S is a character string made from one element
@@ -315,24 +311,23 @@ boxplot( [ storekplopt(1:num_trials,1:length(snrList)), storekplopt(1:num_trials
 %                              p     pentagram
 %                              h     hexagram
 
-idplot = idplot+1
-handle = figure(idplot )
-inversestd = std(storekplopt(1:num_trials,:),0,1)
-plot( snrList , inversestd(0*length(snrList)+1:1*length(snrList)), 'b',...
-      snrList , inversestd(1*length(snrList)+1:2*length(snrList)), 'g',... 
-      snrList , inversestd(2*length(snrList)+1:3*length(snrList)), 'r',... 
-      snrList , inversestd(3*length(snrList)+1:4*length(snrList)), 'c',... 
-      snrList , inversestd(4*length(snrList)+1:5*length(snrList)), 'm',... 
-      snrList , inversestd(length(solverType)*length(snrList)+1:end), 'k') 
-legendList = solverType 
-legendList(end+1) = {'const'} 
-ylabel('std kpl')
-xlabel('SNR')
-legend(legendList)
-saveas(handle,sprintf('solversummaryNP%d',numberParameters),'png')
+solverList = solverType 
+solverList(end+1)= {'const'}
+for isolver = 1:numel(solverList)
+  idplot = idplot+1
+  handle = figure(idplot )
+  inversestd  = std(storekplopt(1:num_trials,:),0,1)
+  inversemean = mean(storekplopt(1:num_trials,:),1)
+  plot( snrList , inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList)), 'b',...
+        snrList , inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))-inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)), 'b--',...
+        snrList , inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))+inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)), 'b--',...
+        snrList , ones(1,length(snrList))*solnList(end).params.ExchangeTerms(1,2) , 'k') 
+  ylabel('fit kpl (sec^{-1})')
+  xlabel('SNR')
+  title(solverList{isolver})
+  set(gca,'FontSize',16)
+  saveas(handle,sprintf('solversummaryNP%d%s',numberParameters,solverList{isolver}),'png')
+end
 
-%%figure(6)
-%%disp([ mean(storekplopt(:,:,1),2) var(storekplopt(:,:,1),0,2) mean(storekplopt(:,:,2),2) var(storekplopt(:,:,2),0,2) ])
-%%disp([ var(storekplopt(nroipixel:nroipixel+1,1:num_trials,1),0,2) var(storekplopt(nroipixel:nroipixel+1,1:num_trials,2),0,2) ])
     
 

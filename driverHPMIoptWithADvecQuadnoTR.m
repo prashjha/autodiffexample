@@ -6,25 +6,26 @@
 clear all
 clc
 
-mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
-driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
-driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
-driverHPMIopt(3,3,25,mynewoptions,'MaxSignal')
-driverHPMIopt(3,3, 2,mynewoptions,'MaxSignalDiff')
-driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
-driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
-driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
-
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
 driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
 driverHPMIopt(3,3,10,myoptions,'TotalSignal')
 driverHPMIopt(3,3,20,myoptions,'TotalSignal')
 driverHPMIopt(3,3,25,myoptions,'TotalSignal')
+
+mynewoptions.Algorithm = 'constDirect'
+driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
+driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
+%driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
+%driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
+%driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
+%driverHPMIopt(3,3,25,mynewoptions,'MaxSignal')
+%driverHPMIopt(3,3, 2,mynewoptions,'MaxSignalDiff')
+%driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
+%driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
+%driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
+
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
 driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
@@ -50,7 +51,7 @@ driverHPMIopt(3,3,25,myoptions,'TotalSignal')
 %% % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
 function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
- % NGauss = 3,NumberUncertain=3,modelSNR=10
+  %NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'TotalSignal'
 
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType
   close all
@@ -336,6 +337,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
          case(5)
            error("WIP")
       end
+      % need uncertainty verification at the same parameters
+      refparams = params;
       % solve
       switch (myoptions.Algorithm)
           case('constDirect') 
@@ -365,6 +368,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
              popt.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
              pneg.FaList = repmat([pi/180*pyrgrid(idmax);pi/180*lacgrid(idmax)],1,Ntime);
              optparams.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
+             refparams.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
   
              handle = figure(5)
              imagesc(brutesearch)
@@ -390,25 +394,30 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
 
              handle = figure(5)
              optparams.FaList = reshape(designopt(:),size(params.FaList ));
+             refparams.FaList = reshape(designopt(:),size(params.FaList ));
              popt.FaList      = reshape(designopt(:),size(params.FaList ));
       end
       % save convergence history
+      set(gca,'FontSize',16)
       saveas(handle,sprintf('historyNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR ),'png')
       popt.state       = evaluate(auxvariable, popt);
       toc;
 
 
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
+      [t_axisref,Mxyref,Mzref] = model.compile(M0.',refparams);
+      save(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR) ,'popt','params','Mxy','Mz','Mxyref','Mzref','signu','signuImage')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('MI Mxy')
       xlabel('sec'); legend('Pyr','Lac')
+      set(gca,'FontSize',16)
       saveas(handle,sprintf('OptMxyNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
       handle = figure(11)
       plot(params.TRList,popt.FaList(1,:)*180/pi,'b',params.TRList,popt.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
+      set(gca,'FontSize',16)
       saveas(handle,sprintf('OptFANG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
       handle = figure(12)
       plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
@@ -421,6 +430,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
       %end
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
+      set(gca,'FontSize',16)
       saveas(handle,sprintf('OptMzNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
   end 
 
