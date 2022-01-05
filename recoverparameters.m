@@ -12,7 +12,7 @@ uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
 snrList = [2,10,20,25]
-numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + length(snrList)
+numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + 2*length(snrList)
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[]);
 icount  = 0;
 for isolver = 1:numel(solverType)
@@ -33,6 +33,17 @@ for isnr = 1:length(snrList)
    solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
 end
 
+% establish control
+cntrlparams = worktmp.params;
+cntrlparams.FaList = ones(size(cntrlparams.FaList))*pi/180;
+M0 = [0,0];
+model = HPKinetics.NewMultiPoolTofftsGammaVIF();
+[t_axiscntrl,Mxycntrl,Mzcntrl] = model.compile(M0.',cntrlparams);
+
+for isnr = 1:length(snrList)
+   icount= icount+1;
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
+end
 
 % extract timehistory info
 num_trials = 25;
@@ -294,8 +305,9 @@ for idesign = 1:length(solnList)
 end 
 
 %save workspace
-save('recovervalidate.mat')
+save('recovervalidate.mat' ,'storekplopt', 'storekveqpopt', 'storeT1Popt', 'storeT1Lopt', 'storet0opt')
 
+           
 %   Various line types, plot symbols and colors may be obtained with
 %   PLOT(X,Y,S) where S is a character string made from one element
 %   from any or all the following 3 columns:
@@ -314,7 +326,8 @@ save('recovervalidate.mat')
 %                              h     hexagram
 
 solverList = solverType 
-solverList(end+1)= {'const'}
+solverList(end+1)= {'const'};
+solverList(end+1)= {'control'}
 for isolver = 1:numel(solverList)
   idplot = idplot+1
   handle = figure(idplot )
@@ -326,7 +339,7 @@ for isolver = 1:numel(solverList)
   ylabel('fit kpl (sec^{-1})')
   xlabel('SNR')
   xlim([0 30])
-  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))+.005 , sprintfc('mu = %6.4f',inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))) )
+  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))      , sprintfc('mu = %6.4f',inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))) )
   text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))-.005 , sprintfc('std= %6.4f',inversestd( (isolver-1)*length(snrList)+1:isolver*length(snrList))) )
   title(solverList{isolver})
   set(gca,'FontSize',16)
