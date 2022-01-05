@@ -6,13 +6,11 @@
 clear all
 clc
 
-myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
-driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
-driverHPMIopt(3,3,10,myoptions,'TotalSignal')
-driverHPMIopt(3,3,20,myoptions,'TotalSignal')
-driverHPMIopt(3,3,25,myoptions,'TotalSignal')
-
 mynewoptions.Algorithm = 'constDirect'
+driverHPMIopt(3,3, 2,mynewoptions,'SumTimepoints')
+%driverHPMIopt(3,3,10,mynewoptions,'SumTimepoints')
+%driverHPMIopt(3,3,20,mynewoptions,'SumTimepoints')
+%driverHPMIopt(3,3,25,mynewoptions,'SumTimepoints')
 driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
@@ -25,6 +23,13 @@ driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
 %driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
 %driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
 %driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
+
+
+myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
+driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
+driverHPMIopt(3,3,10,myoptions,'TotalSignal')
+driverHPMIopt(3,3,20,myoptions,'TotalSignal')
+driverHPMIopt(3,3,25,myoptions,'TotalSignal')
 
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )

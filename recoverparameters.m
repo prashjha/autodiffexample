@@ -293,6 +293,8 @@ for idesign = 1:length(solnList)
 
 end 
 
+%save workspace
+save('recovervalidate.mat')
 
 %   Various line types, plot symbols and colors may be obtained with
 %   PLOT(X,Y,S) where S is a character string made from one element
@@ -318,16 +320,27 @@ for isolver = 1:numel(solverList)
   handle = figure(idplot )
   inversestd  = std(storekplopt(1:num_trials,:),0,1)
   inversemean = mean(storekplopt(1:num_trials,:),1)
-  plot( snrList , inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList)), 'b',...
-        snrList , inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))-inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)), 'b--',...
-        snrList , inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))+inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)), 'b--',...
-        snrList , ones(1,length(snrList))*solnList(end).params.ExchangeTerms(1,2) , 'k') 
+  plot( snrList , ones(1,length(snrList))*solnList(end).params.ExchangeTerms(1,2) , 'g','linewidth',2) 
+  hold
+  errorbar(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList)),inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)),'LineStyle','none', 'Color', 'b','linewidth', 2);
   ylabel('fit kpl (sec^{-1})')
   xlabel('SNR')
+  xlim([0 30])
+  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))+.005 , sprintfc('mu = %6.4f',inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))) )
+  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))-.005 , sprintfc('std= %6.4f',inversestd( (isolver-1)*length(snrList)+1:isolver*length(snrList))) )
   title(solverList{isolver})
   set(gca,'FontSize',16)
   saveas(handle,sprintf('solversummaryNP%d%s',numberParameters,solverList{isolver}),'png')
 end
 
+idplot = idplot+1
+figure(idplot )
+labellist ={}
+for isolver = 1:numel(solverList)
+   for isnr = 1:length(snrList)
+    labellist(end+1) = cellstr(sprintf('%ssnr%02d',char(solverList(isolver)) ,snrList(isnr)))
+   end
+end
+boxplot(  storekplopt(1:num_trials,:), labellist  )
     
 
