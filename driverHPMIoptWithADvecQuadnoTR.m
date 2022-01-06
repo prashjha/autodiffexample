@@ -175,6 +175,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
       % signal sum  ==> signu = Ntime * signuImage 
       % noise calc max signal assuming total signal is sum of gaussian RV
       signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
+      % walker paper is peak pyruvate only
+      signuImage = max(Mxy(1,:))/modelSNR;
       % variance for Gauss RV is sum. sqrt for std
       signu = sqrt(2* Ntime) * signuImage;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
