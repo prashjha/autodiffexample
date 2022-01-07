@@ -12,7 +12,12 @@ uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
 snrList = [2,10,20,25]
-numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + 2*length(snrList)
+% pareto trade off total signal vs MI
+myFAList =  repmat([4:4:31],2,1);
+myFAList(2,:) =  28;
+
+
+numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList)
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[]);
 icount  = 0;
 for isolver = 1:numel(solverType)
@@ -26,6 +31,10 @@ for isolver = 1:numel(solverType)
   end
  end
 end
+
+% array info
+Ntime    = size(solnList(1).Mz,2);
+Nspecies = size(solnList(1).Mz,1);
 
 % compute variance for each SNR
 for isnr = 1:length(snrList)
@@ -45,10 +54,25 @@ for isnr = 1:length(snrList)
    solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
 end
 
+
+% pareto total signal vs MI
+for jjj = 1:size(myFAList,2)
+  paretoparams = worktmp.params;
+  paretoparams.FaList = repmat(myFAList(:,jjj),1,Ntime )*pi/180;
+  M0 = [0,0];
+  model = HPKinetics.NewMultiPoolTofftsGammaVIF();
+  [t_axispareto,Mxypareto,Mzpareto] = model.compile(M0.',paretoparams);
+  
+  
+  for isnr = 1:length(snrList)
+     icount= icount+1;
+     solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',paretoparams.FaList,'solver',sprintf('paretoP%dL%d',myFAList(:,jjj)),'params',paretoparams, 'Mxy',Mxypareto, 'Mz',Mzpareto,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
+  end
+end
+
+
 % extract timehistory info
 num_trials = 25;
-Ntime    = size(solnList(1).Mz,2);
-Nspecies = size(solnList(1).Mz,1);
 timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)

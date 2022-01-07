@@ -7,10 +7,10 @@ clear all
 clc
 
 mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(3,3, 2,mynewoptions,'SumTimepoints')
-%driverHPMIopt(3,3,10,mynewoptions,'SumTimepoints')
-%driverHPMIopt(3,3,20,mynewoptions,'SumTimepoints')
-%driverHPMIopt(3,3,25,mynewoptions,'SumTimepoints')
+driverHPMIopt(3,3, 2,mynewoptions,'SumQuad')
+driverHPMIopt(3,3,10,mynewoptions,'SumQuad')
+driverHPMIopt(3,3,20,mynewoptions,'SumQuad')
+driverHPMIopt(3,3,25,mynewoptions,'SumQuad')
 driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
 driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
@@ -30,6 +30,10 @@ driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
 driverHPMIopt(3,3,10,myoptions,'TotalSignal')
 driverHPMIopt(3,3,20,myoptions,'TotalSignal')
 driverHPMIopt(3,3,25,myoptions,'TotalSignal')
+driverHPMIopt(3,3, 2,myoptions,'SumQuad')
+driverHPMIopt(3,3,10,myoptions,'SumQuad')
+driverHPMIopt(3,3,20,myoptions,'SumQuad')
+driverHPMIopt(3,3,25,myoptions,'SumQuad')
 
 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
@@ -37,6 +41,10 @@ driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
 driverHPMIopt(3,3,10,myoptions,'TotalSignal')
 driverHPMIopt(3,3,20,myoptions,'TotalSignal')
 driverHPMIopt(3,3,25,myoptions,'TotalSignal')
+driverHPMIopt(3,3, 2,myoptions,'SumQuad')
+driverHPMIopt(3,3,10,myoptions,'SumQuad')
+driverHPMIopt(3,3,20,myoptions,'SumQuad')
+driverHPMIopt(3,3,25,myoptions,'SumQuad')
 
 
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
@@ -56,7 +64,7 @@ driverHPMIopt(3,3,25,myoptions,'TotalSignal')
 %% % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
 function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
-  %NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'TotalSignal'
+  %NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'SumQuad'
 
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType
   close all
@@ -108,8 +116,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
               E1(1) = exp(-currentTR *(1/T1pmean+kplmean));
               E1(2) = exp(-currentTR /T1lmean);
               for n = 1:Ntime
-                  %flips(2,n) = acos(sqrt((E1(2)^2-E1(2)^(2*(N-n+1)))/(1-E1(2)^(2*(N-n+1)))));
-                  flips(2,n) = 15*pi/180;
+                  % 20deg for pyruvate 30deg for lactate - currently used in brain
+                  flips(2,n) = 30*pi/180;
                   flips(1,n) = 20*pi/180;
               end
               params.FaList = flips ;
@@ -282,6 +290,13 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
               znu=xn2{1}(jjj) ;
               negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
             end
+          case('SumQuad')
+            sumstatevariable = optimexpr([Nspecies,lqp]);
+            for jjj = 1:lqp
+               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*statevariable(:,:,jjj),1)';
+            end 
+            % max total signal sum
+            negHz=-sum(sum(sumstatevariable)) ;
           case('SumTimepoints')
             negHz = 0;
             for jjj=1:lqp2
@@ -371,7 +386,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
                  brutesearch(iii) = evaluate(MIGaussObj,x0);
              end
              [maxMI,idmax] = max(brutesearch(:));
-             [minMI,idmin] = min(brutesearch(:));
+             [fval,idmin] = min(brutesearch(:));
              popt.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
              pneg.FaList = repmat([pi/180*pyrgrid(idmax);pi/180*lacgrid(idmax)],1,Ntime);
              optparams.FaList = repmat([pi/180*pyrgrid(idmin);pi/180*lacgrid(idmin)],1,Ntime);
@@ -382,7 +397,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
              colorbar
              xlabel('FA Pyruvate - deg')
              ylabel('FA Lactate - deg')
-             title(sprintf('MI optimization surface max %f min %f',maxMI,minMI) )
+             title(sprintf('MI max %f min %f',maxMI,fval) )
              text(pyrgrid(idmin)+1,lacgrid(idmin)+1, sprintf('opt %d %d', pyrgrid(idmin), lacgrid(idmin)));
              text(pyrgrid(idmax)+1,lacgrid(idmax)+1, 'control');
           otherwise
@@ -413,7 +428,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
 
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
       [t_axisref,Mxyref,Mzref] = model.compile(M0.',refparams);
-      save(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR) ,'popt','params','Mxy','Mz','Mxyref','Mzref','signu','signuImage')
+      save(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR) ,'fval','popt','params','Mxy','Mz','Mxyref','Mzref','signu','signuImage')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('MI Mxy')
