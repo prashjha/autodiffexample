@@ -5,7 +5,7 @@ clc
 
 solverType = {'adj'};
 solverType = {'constDirect','sqp','interior-point'};
-ObjectiveType = {'TotalSignal'}
+ObjectiveType = {'TotalSignal','SumQuad'}
 gpList = [3, 4,5]
 gpList = [3]
 uncertainList = [3]
@@ -17,16 +17,18 @@ myFAList =  repmat([4:4:31],2,1);
 myFAList(2,:) =  28;
 
 
-numsolves = numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList)
-solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[]);
+numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList)
+solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[]);
 icount  = 0;
-for isolver = 1:numel(solverType)
- for igp = 1:length(gpList)
-  for inu = 1:length(uncertainList)
-   for isnr = 1:length(snrList)
-      worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{1},snrList(isnr)));
-      icount= icount+1;
-      solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu);
+for iobj = 1:numel(ObjectiveType)
+ for isolver = 1:numel(solverType)
+  for igp = 1:length(gpList)
+   for inu = 1:length(uncertainList)
+    for isnr = 1:length(snrList)
+       worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{iobj},snrList(isnr)));
+       icount= icount+1;
+       solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',worktmp.fval);
+    end
    end
   end
  end
@@ -39,7 +41,7 @@ Nspecies = size(solnList(1).Mz,1);
 % compute variance for each SNR
 for isnr = 1:length(snrList)
    icount= icount+1;
-   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
 end
 
 % establish control
@@ -51,7 +53,7 @@ model = HPKinetics.NewMultiPoolTofftsGammaVIF();
 
 for isnr = 1:length(snrList)
    icount= icount+1;
-   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
 end
 
 
@@ -66,7 +68,7 @@ for jjj = 1:size(myFAList,2)
   
   for isnr = 1:length(snrList)
      icount= icount+1;
-     solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',paretoparams.FaList,'solver',sprintf('paretoP%dL%d',myFAList(:,jjj)),'params',paretoparams, 'Mxy',Mxypareto, 'Mz',Mzpareto,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu);
+     solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',paretoparams.FaList,'solver',sprintf('paretoP%dL%d',myFAList(:,jjj)),'params',paretoparams, 'Mxy',Mxypareto, 'Mz',Mzpareto,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
   end
 end
 
@@ -309,7 +311,7 @@ for idesign = 1:length(solnList)
        if idtrial >= num_trials 
        % plot
        idplot = (num_trials+1)*(idesign-1) + idtrial ;
-       figure(idplot )
+       handle = figure(idplot )
        plot(solnList(idesign ).params.TRList , timehistory(:,1,idtrial,idesign), 'b', ...
             solnList(idesign ).params.TRList , timehistory(:,2,idtrial,idesign), 'b-.', ...
             solnList(idesign ).params.TRList , timehistory(:,1,num_trials+1,idesign), 'r', ...
@@ -325,6 +327,7 @@ for idesign = 1:length(solnList)
        title(sprintf('curvefit %s %d %d',solnList(idesign ).solver,solnList(idesign ).snr,idtrial))
        legend('walker+rice','','walker','','ic','','truth','','df','')
        set(gca,'FontSize',16)
+       saveas(handle,sprintf('recoverparametersFig%04d',idplot),'png')
        pause(.1)
        end 
 

@@ -44,8 +44,8 @@ for jjj =1:length(solnList)
   % NOTE - image noise is at the single image for single species - signu is for the sum over time for both species ==> divide by Ntime and Nspecies
   imagenoise = solnList(jjj).signuImage;
   %disp([xroi(jjj),yroi(jjj),zroi(jjj)]);
-  timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mz(1,:);
-  timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mz(2,:);
+  timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mxy(1,:);
+  timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mxy(2,:);
   % add noise for num_trials
   for kkk = 1:num_trials
       pyrnoise = imagenoise *randn(Ntime,1);
@@ -61,7 +61,7 @@ plot( TR_list, timehistory(:,1,num_trials+1,2), 'b', ...
       TR_list, timehistory(:,2,num_trials+1,2), 'k', ...
       TR_list, timehistory(:,1,num_trials,2), 'b--', ...
       TR_list, timehistory(:,2,num_trials,2), 'k--')
-ylabel('MI Mz ')
+ylabel('Mxy')
 xlabel('sec'); legend('Pyr','Lac')
 set(gca,'FontSize',16)
 saveas(handle,'examplenoise','png')
