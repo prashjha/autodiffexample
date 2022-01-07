@@ -55,8 +55,8 @@ for jjj =1:length(solnList)
   % NOTE - image noise is at the single image for single species - signu is for the sum over time for both species ==> divide by Ntime and Nspecies
   imagenoise = solnList(jjj).signuImage;
   %disp([xroi(jjj),yroi(jjj),zroi(jjj)]);
-  timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mz(1,:);
-  timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mz(2,:);
+  timehistory(:,1,num_trials+1,jjj) = solnList(jjj).Mxy(1,:);
+  timehistory(:,2,num_trials+1,jjj) = solnList(jjj).Mxy(2,:);
   % add noise for num_trials
   for kkk = 1:num_trials
       pyrnoise = imagenoise *randn(Ntime,1);
@@ -150,11 +150,13 @@ for idesign = 1:length(solnList)
          xstar.t0         = solnList(idesign ).params.t0(1);
    end
    statevariable  = optimexpr([Nspecies,Ntime]);
+   statesignal    = optimexpr([Nspecies,Ntime]);
 
 
    disp('build constraints')
    A0    = solnList(idesign ).params.scaleFactor(1);
    statevariable(:,1 )=0;
+   statesignal(:,1 )=0;
    for iii = 1:Ntime-1
      disp([Nspecies*(iii-1)+1 , Nspecies*(iii-1)+2 ,Ntime* Nspecies])
      klpqp =    0 ;     % @cmwalker where do I get this from ? 
@@ -188,9 +190,11 @@ for idesign = 1:length(solnList)
      aifterm = kveqp * deltat * [ exp((-1/T1P - kpl - kveqp)*deltat*[.5:1:nsubstep] );
    (kpl*exp((-1/T1P - kpl - kveqp)*deltat*[.5:1:nsubstep] ) - kpl*exp(-1/T1L *deltat*[.5:1:nsubstep] ))/((-1/T1P - kpl - kveqp) + 1/T1L )] * integrand ;
      statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
+     statesignal(:,iii+1)   =  sin(solnList(idesign ).FaList(:,iii+1)).* statevariable(:,iii+1);
      statevariable(:,iii+1) =  cos(solnList(idesign ).FaList(:,iii+1)).* statevariable(:,iii+1);
    end
-   truthstate = evaluate(statevariable ,xstar);
+   truthstate  = evaluate(statevariable ,xstar);
+   truthsignal = evaluate(statesignal ,xstar);
 
    %% 
    % Create an optimization problem using these converted optimization expressions.
@@ -199,7 +203,7 @@ for idesign = 1:length(solnList)
    for idtrial = 1:num_trials+1
        tic;
        disp(sprintf('design = %d, trial = %d',idesign, idtrial )); solnList(idesign)
-       mycostfcn = sum( (statevariable(1,:)'- timehistory(:,1,idtrial,idesign ) ).^2) + sum( (statevariable(2,:)'- timehistory(:,2,idtrial,idesign ) ).^2);
+       mycostfcn = sum( (statesignal(1,:)'- timehistory(:,1,idtrial,idesign ) ).^2) + sum( (statesignal(2,:)'- timehistory(:,2,idtrial,idesign ) ).^2);
 
        disp('create optim prob')
        convprob = optimproblem('Objective',mycostfcn );
@@ -210,7 +214,6 @@ for idesign = 1:length(solnList)
        % problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjectiveRecover');
        %% 
        % Solve the new problem. The solution is essentially the same as before.
-       
 
        %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true, 'SpecifyConstraintGradient', true)
        %myoptions = optimoptions(@fmincon,'Display','iter-detailed','MaxFunctionEvaluations' , 3.000000e+04)
@@ -241,7 +244,8 @@ for idesign = 1:length(solnList)
             x0.T1L        = unifrnd(15 ,35);
             x0.t0         = unifrnd(0  ,8);
        end
-       initialstate = evaluate(statevariable ,x0);
+       initialstate  = evaluate(statevariable ,x0);
+       initialsignal = evaluate(statesignal ,x0);
        [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'solver','lsqnonlin' , 'ObjectiveDerivative', 'finite-differences')
        switch (numberParameters)
           case(1) 
@@ -275,7 +279,8 @@ for idesign = 1:length(solnList)
             storeT1Lopt(  idtrial,idesign)  = popt.T1L;
             storet0opt (  idtrial,idesign)  = popt.t0 ; 
        end
-       slnstate = evaluate(statevariable ,popt);
+       slnstate  = evaluate(statevariable ,popt);
+       slnsignal = evaluate(statesignal ,popt);
 
        if idtrial >= num_trials 
        % plot
@@ -285,13 +290,13 @@ for idesign = 1:length(solnList)
             solnList(idesign ).params.TRList , timehistory(:,2,idtrial,idesign), 'b-.', ...
             solnList(idesign ).params.TRList , timehistory(:,1,num_trials+1,idesign), 'r', ...
             solnList(idesign ).params.TRList , timehistory(:,2,num_trials+1,idesign), 'r-.', ...
-            solnList(idesign ).params.TRList , initialstate(1,:), 'g', ...
-            solnList(idesign ).params.TRList , initialstate(2,:), 'g-.', ...
-            solnList(idesign ).params.TRList , truthstate(1,:), 'm', ...
-            solnList(idesign ).params.TRList , truthstate(2,:), 'm-.', ...
-            solnList(idesign ).params.TRList , slnstate(1,:), 'k', ...
-            solnList(idesign ).params.TRList , slnstate(2,:), 'k-.')
-       ylabel('Mz')
+            solnList(idesign ).params.TRList , initialsignal(1,:), 'g', ...
+            solnList(idesign ).params.TRList , initialsignal(2,:), 'g-.', ...
+            solnList(idesign ).params.TRList , truthsignal(1,:), 'm', ...
+            solnList(idesign ).params.TRList , truthsignal(2,:), 'm-.', ...
+            solnList(idesign ).params.TRList , slnsignal(1,:), 'k', ...
+            solnList(idesign ).params.TRList , slnsignal(2,:), 'k-.')
+       ylabel('Mxy')
        xlabel('sec')
        title(sprintf('curvefit %s %d %d',solnList(idesign ).solver,solnList(idesign ).snr,idtrial))
        legend('walker+rice','','walker','','ic','','truth','','df','')
@@ -339,9 +344,11 @@ for isolver = 1:numel(solverList)
   ylabel('fit kpl (sec^{-1})')
   xlabel('SNR')
   xlim([0 30])
-  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))+.002 , sprintfc('\\mu=%6.4f',inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))) )
-  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))-.002 , sprintfc('\\sigma=%6.4f',inversestd( (isolver-1)*length(snrList)+1:isolver*length(snrList))) )
+  textscale = max(inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)))*.1;
+  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))+textscale , sprintfc('\\mu=%6.4f',inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))) )
+  text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))-textscale , sprintfc('\\sigma=%6.4f',inversestd( (isolver-1)*length(snrList)+1:isolver*length(snrList))) )
   title(solverList{isolver})
+  legend('truth','fit')
   set(gca,'FontSize',16)
   saveas(handle,sprintf('solversummaryNP%d%s',numberParameters,solverList{isolver}),'png')
 end
