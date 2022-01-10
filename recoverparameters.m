@@ -18,7 +18,7 @@ myFAList(2,:) =  28;
 
 
 numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList)
-solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[]);
+solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[],'objective',[],'plotlabel',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[]);
 icount  = 0;
 for iobj = 1:numel(ObjectiveType)
  for isolver = 1:numel(solverType)
@@ -27,7 +27,7 @@ for iobj = 1:numel(ObjectiveType)
     for isnr = 1:length(snrList)
        worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{iobj},snrList(isnr)));
        icount= icount+1;
-       solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',worktmp.fval);
+       solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'objective',ObjectiveType{iobj},'plotlabel',sprintf('%s%s',solverType{isolver},ObjectiveType{iobj}),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',worktmp.fval);
     end
    end
   end
@@ -41,7 +41,7 @@ Nspecies = size(solnList(1).Mz,1);
 % compute variance for each SNR
 for isnr = 1:length(snrList)
    icount= icount+1;
-   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','objective','Max','plotlabel','constMax','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
 end
 
 % establish control
@@ -53,7 +53,7 @@ model = HPKinetics.NewMultiPoolTofftsGammaVIF();
 
 for isnr = 1:length(snrList)
    icount= icount+1;
-   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','objective','MI','plotlabel','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
 end
 
 
@@ -68,13 +68,13 @@ for jjj = 1:size(myFAList,2)
   
   for isnr = 1:length(snrList)
      icount= icount+1;
-     solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',paretoparams.FaList,'solver',sprintf('paretoP%dL%d',myFAList(:,jjj)),'params',paretoparams, 'Mxy',Mxypareto, 'Mz',Mzpareto,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
+     solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',paretoparams.FaList,'solver',sprintf('paretoP%dL%d',myFAList(:,jjj)),'objective','Max','plotlabel',sprintf('paretoP%dL%dMax',myFAList(:,jjj)),'params',paretoparams, 'Mxy',Mxypareto, 'Mz',Mzpareto,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
   end
 end
 
 
 % extract timehistory info
-num_trials = 25;
+num_trials = 100;
 timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)
@@ -357,10 +357,8 @@ save('recovervalidate.mat' ,'storekplopt', 'storekveqpopt', 'storeT1Popt', 'stor
 %                              p     pentagram
 %                              h     hexagram
 
-solverList = solverType 
-solverList(end+1)= {'const'};
-solverList(end+1)= {'control'}
-for isolver = 1:numel(solverList)
+numplots = length(solnList) / length(snrList)
+for isolver = 1:numplots 
   idplot = idplot+1
   handle = figure(idplot )
   inversestd  = std(storekplopt(1:num_trials,:),0,1)
@@ -374,20 +372,17 @@ for isolver = 1:numel(solverList)
   textscale = max(inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)))*.1;
   text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))+textscale , sprintfc('\\mu=%6.4f',inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))) )
   text(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList))-textscale , sprintfc('\\sigma=%6.4f',inversestd( (isolver-1)*length(snrList)+1:isolver*length(snrList))) )
-  title(solverList{isolver})
+  title(solnList((isolver-1)*length(snrList)+1).plotlabel)
   legend('truth','fit')
   set(gca,'FontSize',16)
-  saveas(handle,sprintf('solversummaryNP%d%s',numberParameters,solverList{isolver}),'png')
+  saveas(handle,sprintf('solversummaryNP%d%s',numberParameters,solnList((isolver-1)*length(snrList)+1).plotlabel),'png')
 end
 
 idplot = idplot+1
-figure(idplot )
-labellist ={}
-for isolver = 1:numel(solverList)
-   for isnr = 1:length(snrList)
-    labellist(end+1) = cellstr(sprintf('%ssnr%02d',char(solverList(isolver)) ,snrList(isnr)))
-   end
-end
-boxplot(  storekplopt(1:num_trials,:), labellist  )
+handle = figure(idplot )
+boxplot(  storekplopt(1:num_trials,:), {solnList(:).plotlabel} )
+ylim([0 .4])
+saveas(handle,'globalboxplot','png')
+ 
     
 

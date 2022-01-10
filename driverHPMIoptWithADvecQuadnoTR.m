@@ -397,7 +397,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
              colorbar
              xlabel('FA Pyruvate - deg')
              ylabel('FA Lactate - deg')
-             title(sprintf('MI max %f min %f',maxMI,fval) )
+             title(sprintf('max %f min %f',maxMI,fval) )
              text(pyrgrid(idmin)+1,lacgrid(idmin)+1, sprintf('opt %d %d', pyrgrid(idmin), lacgrid(idmin)));
              text(pyrgrid(idmax)+1,lacgrid(idmax)+1, 'control');
           otherwise
