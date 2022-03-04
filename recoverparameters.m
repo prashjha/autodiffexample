@@ -5,7 +5,9 @@ clc
 
 solverType = {'adj'};
 solverType = {'constDirect','sqp','interior-point'};
+solverType = {'constDirect','interior-point'};
 ObjectiveType = {'TotalSignal','SumQuad'}
+ObjectiveType = {'TotalSignal'}
 gpList = [3, 4,5]
 gpList = [3]
 uncertainList = [3]
@@ -16,8 +18,7 @@ snrList = [2,10,20,25]
 myFAList =  repmat([4:4:31],2,1);
 myFAList(2,:) =  28;
 
-
-numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList)
+numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[],'objective',[],'plotlabel',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[]);
 icount  = 0;
 for iobj = 1:numel(ObjectiveType)
@@ -72,9 +73,19 @@ for jjj = 1:size(myFAList,2)
   end
 end
 
+%UB/LB for MI solution
+for isnr = 1:length(snrList)
+   worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(1),uncertainList(1),solverType{2},ObjectiveType{1},snrList(1)));
+   icount= icount+1;
+   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',solverType{2},'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',solverType{2},ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+
+   worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(1),uncertainList(1),solverType{2},ObjectiveType{1},snrList(end)));
+   icount= icount+1;
+   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',solverType{2},'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',solverType{2},ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+end
 
 % extract timehistory info
-num_trials = 100;
+num_trials = 25;
 timehistory  = zeros(Ntime,Nspecies,num_trials+1,length(solnList) );
 
 for jjj =1:length(solnList)
@@ -385,4 +396,26 @@ ylim([0 .4])
 saveas(handle,'globalboxplot','png')
  
     
+% create legend for index
+solnTable = struct2table(solnList)
+solnTable.myindex = [1:60]'
 
+% analysis of variance
+constDirectSumQuadSNR25 = 16
+constMaxSNR25 = 28
+paretoP20L28MaxSNR25 = 52
+constDirectSumQuadSNR20 = 15
+constMaxSNR20 = 27
+paretoP20L28MaxSNR20 = 51
+
+% test tha variance of constDirectSumQuadSNR25  is less than constMaxSNR25 
+[myh,myp,myci,mystats] = vartest2(storekplopt(1:num_trials,constDirectSumQuadSNR25 ),storekplopt(1:num_trials,constMaxSNR25 ),'Tail','left')
+[myh2,myp2,myci2,mystats2] = vartest2(storekplopt(1:num_trials,paretoP20L28MaxSNR25 ),storekplopt(1:num_trials,constMaxSNR25 ),'Tail','both')
+[myh3,myp3,myci3,mystats3] = vartest2(storekplopt(1:num_trials,paretoP20L28MaxSNR20 ),storekplopt(1:num_trials,constMaxSNR20 ),'Tail','both')
+std(storekplopt(1:num_trials,paretoP20L28MaxSNR25 ))
+std(storekplopt(1:num_trials,constMaxSNR25 ))
+std(storekplopt(1:num_trials,constDirectSumQuadSNR25 ))
+
+% A paired samples t-test was performed to compare miles per gallon between fuel treatment and no fuel treatment.  There was a significant difference in miles per gallon between fuel treatment (M = 22.75, SD = 3.25) and no fuel treatment (M = 21, SD = 2.73); t(11) = -2.244, p = .046.
+
+% One sample t-test was conducted to determine whether there is a difference between the results on the Math test and the true population mean (M=86.00). The results indicate a significant difference between the true mean (M=86.00) and the mean Math test score (M=73.08; SD=16.89), [t(36) = -4.651, p = .000]. We, therefore, reject the null hypothesis that there is not a difference between the true mean and the comparison value and conclude that our mean Math test score is significantly different from the true population mean.
