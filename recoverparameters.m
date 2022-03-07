@@ -15,7 +15,8 @@ snrList = [2,10]
 snrList = [2,10,25]
 snrList = [2,10,20,25]
 % pareto trade off total signal vs MI
-myFAList =  repmat([4:4:31],2,1);
+myFAList =  repmat([6:6:35],2,1);
+myFAList(:,end)  =  35;
 myFAList(2,:) =  28;
 
 numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
@@ -397,8 +398,8 @@ saveas(handle,'globalboxplot','png')
  
     
 % create legend for index
-solnTable = struct2table(solnList)
-solnTable.myindex = [1:60]'
+%solnTable = struct2table(solnList)
+%solnTable.myindex = [1:60]'
 
 % analysis of variance
 constDirectSumQuadSNR25 = 16
