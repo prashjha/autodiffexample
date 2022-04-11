@@ -83,6 +83,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   betamean  =  [4.5];
   betasttd  =  [.3];
   tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
+  tisinputlbub=[T1pmean-2*T1pstdd; T1pmean+2*T1pstdd; T1lmean-2*T1lstdd;T1lmean+2*T1lstdd; kplmean-2*kplstdd; kplmean+2*kplstdd; kvemean-2*kvestdd; kvemean+2*kvestdd;t0mean-2*t0sttd;t0mean+2*t0sttd;alphamean-2*alphasttd;alphamean+2*alphasttd; betamean-2*betasttd ;betamean+2*betasttd ];
   
   %% Variable Setup
   Ntime = 30;
@@ -198,7 +199,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
       switch (NumberUncertain)
          case(3)
            if(GaussLegendre)
-             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+             [x,xn,xm,w,wn]=GaussLegendreNDGauss(NGauss,[tisinputlbub(5:2:9)],[tisinputlbub(6:2:10)]);
            else
              [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
            end
@@ -210,7 +211,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
            t0qp    = xn{3}(:); 
          case(4)
            if(GaussLegendre)
-             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+             [x,xn,xm,w,wn]=GaussLegendreNDGauss(NGauss,[tisinputlbub(1:2:7)],[tisinputlbub(2:2:8)]);
            else
              [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
            end
@@ -222,7 +223,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
            t0qp    = t0mean(1); 
          case(5)
            if(GaussLegendre)
-             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:9)],[tisinput(2:2:10)]);
+             [x,xn,xm,w,wn]=GaussLegendreNDGauss(NGauss,[tisinputlbub(1:2:9)],[tisinputlbub(2:2:10)]);
            else
              [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:9)],[tisinput(2:2:10)]);
            end
@@ -305,7 +306,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
             negHz = 0;
             for jjj=1:lqp2
               znu=xn2{1}(jjj) ;
-              % note that the sqrt(pi)^N+1  and 2^N factors from the integration over priors is dropped.
+              % note that the sqrt(pi)^N+1  and 2^N factors from the integration over priors is included in the quadrature routines.
               % this makes is easier to switch between Gaussian and Uniform RV
               negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
             end
