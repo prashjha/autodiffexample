@@ -7,45 +7,44 @@ clear all
 clc
 
 mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(3,3, 2,mynewoptions,'SumQuad')
-driverHPMIopt(3,3,10,mynewoptions,'SumQuad')
-driverHPMIopt(3,3,20,mynewoptions,'SumQuad')
-driverHPMIopt(3,3,25,mynewoptions,'SumQuad')
-driverHPMIopt(3,3, 2,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,10,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,20,mynewoptions,'TotalSignal')
-driverHPMIopt(3,3,25,mynewoptions,'TotalSignal')
-%driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
-%driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
-%driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
-%driverHPMIopt(3,3,25,mynewoptions,'MaxSignal')
-%driverHPMIopt(3,3, 2,mynewoptions,'MaxSignalDiff')
-%driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
-%driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
-%driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
-
-
-myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
-driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
-driverHPMIopt(3,3,10,myoptions,'TotalSignal')
-driverHPMIopt(3,3,20,myoptions,'TotalSignal')
-driverHPMIopt(3,3,25,myoptions,'TotalSignal')
-driverHPMIopt(3,3, 2,myoptions,'SumQuad')
-driverHPMIopt(3,3,10,myoptions,'SumQuad')
-driverHPMIopt(3,3,20,myoptions,'SumQuad')
-driverHPMIopt(3,3,25,myoptions,'SumQuad')
-
-
-myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
-driverHPMIopt(3,3, 2,myoptions,'TotalSignal')
-driverHPMIopt(3,3,10,myoptions,'TotalSignal')
-driverHPMIopt(3,3,20,myoptions,'TotalSignal')
-driverHPMIopt(3,3,25,myoptions,'TotalSignal')
-driverHPMIopt(3,3, 2,myoptions,'SumQuad')
-driverHPMIopt(3,3,10,myoptions,'SumQuad')
-driverHPMIopt(3,3,20,myoptions,'SumQuad')
-driverHPMIopt(3,3,25,myoptions,'SumQuad')
-
+driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',true)
+driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',true)
+%% driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',true)
+%% driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3, 2,mynewoptions,'SumQuad')
+%% %driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
+%% %driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
+%% %driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
+%% %driverHPMIopt(3,3,25,mynewoptions,'MaxSignal')
+%% %driverHPMIopt(3,3, 2,mynewoptions,'MaxSignalDiff')
+%% %driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
+%% %driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
+%% %driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
+%% 
+%% 
+%% myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
+%% driverHPMIopt(5,3, 2,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3,10,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3,20,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3,25,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3, 2,myoptions,'SumQuad')
+%% driverHPMIopt(5,3,10,myoptions,'SumQuad')
+%% driverHPMIopt(5,3,20,myoptions,'SumQuad')
+%% driverHPMIopt(5,3,25,myoptions,'SumQuad')
+%% 
+%% 
+%% myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
+%% driverHPMIopt(5,3, 2,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3,10,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3,20,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3,25,myoptions,'TotalSignal')
+%% driverHPMIopt(5,3, 2,myoptions,'SumQuad')
+%% driverHPMIopt(5,3,10,myoptions,'SumQuad')
+%% driverHPMIopt(5,3,20,myoptions,'SumQuad')
+%% driverHPMIopt(5,3,25,myoptions,'SumQuad')
+%% 
 
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','StepTolerance',1.000000e-16)
@@ -63,10 +62,10 @@ driverHPMIopt(3,3,25,myoptions,'SumQuad')
 
 %% % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
-function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
+function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,GaussLegendre )
   %NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'SumQuad'
 
-  NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType
+  NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType,GaussLegendre
   close all
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
@@ -190,9 +189,19 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
   
+      % switch between uniform and Gaussian RV for prior
+      if(GaussLegendre)
+        QuadratureRule = 'Legendre';
+      else
+        QuadratureRule = 'Hermite';
+      end
       switch (NumberUncertain)
          case(3)
-           [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+           if(GaussLegendre)
+             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+           else
+             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+           end
            T1Pqp   = T1pmean;
            T1Lqp   = T1lmean;
            kplqp   = xn{1}(:);
@@ -200,7 +209,11 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
            kveqp   = xn{2}(:);
            t0qp    = xn{3}(:); 
          case(4)
-           [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+           if(GaussLegendre)
+             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+           else
+             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+           end
            T1Pqp   = xn{1}(:);
            T1Lqp   = xn{2}(:);
            kplqp   = xn{3}(:);
@@ -208,7 +221,11 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
            kveqp   = xn{4}(:);
            t0qp    = t0mean(1); 
          case(5)
-           [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:9)],[tisinput(2:2:10)]);
+           if(GaussLegendre)
+             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:9)],[tisinput(2:2:10)]);
+           else
+             [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:9)],[tisinput(2:2:10)]);
+           end
            T1Pqp   = xn{1}(:);
            T1Lqp   = xn{2}(:);
            kplqp   = xn{3}(:);
@@ -288,6 +305,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
             negHz = 0;
             for jjj=1:lqp2
               znu=xn2{1}(jjj) ;
+              % note that the sqrt(pi)^N+1  and 2^N factors from the integration over priors is dropped.
+              % this makes is easier to switch between Gaussian and Uniform RV
               negHz = negHz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
             end
           case('SumQuad')
@@ -421,26 +440,26 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
       end
       % save convergence history
       set(gca,'FontSize',16)
-      saveas(handle,sprintf('historyNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR ),'png')
+      saveas(handle,sprintf('historyNG%dNu%d%s%sSNR%02d%s',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR,QuadratureRule ),'png')
       popt.state       = evaluate(auxvariable, popt);
       toc;
 
 
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
       [t_axisref,Mxyref,Mzref] = model.compile(M0.',refparams);
-      save(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR) ,'fval','popt','params','Mxy','Mz','Mxyref','Mzref','signu','signuImage')
+      save(sprintf('poptNG%dNu%d%s%sSNR%02d%s.mat',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR,QuadratureRule) ,'fval','popt','params','Mxy','Mz','Mxyref','Mzref','signu','signuImage')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('MI Mxy')
       xlabel('sec'); legend('Pyr','Lac')
       set(gca,'FontSize',16)
-      saveas(handle,sprintf('OptMxyNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
+      saveas(handle,sprintf('OptMxyNG%dNu%d%s%sSNR%02d%s',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR,QuadratureRule),'png')
       handle = figure(11)
       plot(params.TRList,popt.FaList(1,:)*180/pi,'b',params.TRList,popt.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
       set(gca,'FontSize',16)
-      saveas(handle,sprintf('OptFANG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
+      saveas(handle,sprintf('OptFANG%dNu%d%s%sSNR%02d%s',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR,QuadratureRule),'png')
       handle = figure(12)
       plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
       hold
@@ -453,7 +472,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType)
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
       set(gca,'FontSize',16)
-      saveas(handle,sprintf('OptMzNG%dNu%d%s%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR),'png')
+      saveas(handle,sprintf('OptMzNG%dNu%d%s%sSNR%02d%s',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR,QuadratureRule),'png')
   end 
 
 
