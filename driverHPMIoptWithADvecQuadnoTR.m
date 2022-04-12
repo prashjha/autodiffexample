@@ -70,20 +70,30 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
   T1pstdd = [ 10 ]; % s
+  T1plb   = [ 5  ]; % s
+  T1pub   = [ 45 ]; % s
   T1lmean = [ 25 ]; % s
   T1lstdd = [ 10 ]; % s
+  T1llb   = [  5 ]; % s
+  T1lub   = [ 45 ]; % s
   kplmean = [ .15 ];       % s
   kplstdd = [ .03 ];       % s
-  kvemean = [ 0.05 ];       % s
-  kvestdd = [ .01  ];       % s
-  t0mean  = [ 4    ];       % s
-  t0sttd  = [ 1.3  ] ;       % s
+  kpllb   = [ .01 ];       % s
+  kplub   = [ .35 ];       % s
+  kvemean = [ 0.05 ];      % s
+  kvestdd = [ .01  ];      % s
+  kvelb   = [ 0.01 ];      % s
+  kveub   = [ 0.20 ];      % s
+  t0mean  = [ 4    ];      % s
+  t0sttd  = [ 1.3  ];      % s
+  t0lb    = [ 0    ];       % s
+  t0ub    = [ 7    ];       % s
   alphamean  =  [2.5];
   alphasttd  =  [.3];
   betamean  =  [4.5];
   betasttd  =  [.3];
   tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
-  tisinputlbub=[T1pmean-2*T1pstdd; T1pmean+2*T1pstdd; T1lmean-2*T1lstdd;T1lmean+2*T1lstdd; kplmean-2*kplstdd; kplmean+2*kplstdd; kvemean-2*kvestdd; kvemean+2*kvestdd;t0mean-2*t0sttd;t0mean+2*t0sttd;alphamean-2*alphasttd;alphamean+2*alphasttd; betamean-2*betasttd ;betamean+2*betasttd ];
+  tisinputlbub=[T1plb; T1pub; T1llb;T1lub; kpllb; kplub; kvelb; kveub;t0lb;t0ub;alphamean-2*alphasttd;alphamean+2*alphasttd; betamean-2*betasttd ;betamean+2*betasttd ];
   
   %% Variable Setup
   Ntime = 30;
