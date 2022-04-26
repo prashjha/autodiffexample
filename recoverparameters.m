@@ -6,14 +6,16 @@ clc
 solverType = {'adj'};
 solverType = {'constDirect','sqp','interior-point'};
 solverType = {'constDirect','interior-point'};
+solverType = {'constDirect'};
 ObjectiveType = {'TotalSignal','SumQuad'}
 ObjectiveType = {'TotalSignal'}
 gpList = [3, 4,5]
-gpList = [3]
+gpList = [5]
 uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
 snrList = [2,10,20,25]
+snrList = [2,5,10,20]
 % pareto trade off total signal vs MI
 myFAList =  repmat([6:6:35],2,1);
 myFAList(:,end)  =  35;
@@ -27,7 +29,7 @@ for iobj = 1:numel(ObjectiveType)
   for igp = 1:length(gpList)
    for inu = 1:length(uncertainList)
     for isnr = 1:length(snrList)
-       worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{iobj},snrList(isnr)));
+       worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{iobj},snrList(isnr)));
        icount= icount+1;
        solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'objective',ObjectiveType{iobj},'plotlabel',sprintf('%s%s',solverType{isolver},ObjectiveType{iobj}),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',worktmp.fval);
     end
@@ -75,14 +77,16 @@ for jjj = 1:size(myFAList,2)
 end
 
 %UB/LB for MI solution
+hacksolvertype='interior-point'
+hackgpList=3
 for isnr = 1:length(snrList)
-   worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(1),uncertainList(1),solverType{2},ObjectiveType{1},snrList(1)));
+   worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(1)));
    icount= icount+1;
-   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',solverType{2},'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',solverType{2},ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',hacksolvertype,ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
 
-   worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',gpList(1),uncertainList(1),solverType{2},ObjectiveType{1},snrList(end)));
+   worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(end)));
    icount= icount+1;
-   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',solverType{2},'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',solverType{2},ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',hacksolvertype,ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
 end
 
 % extract timehistory info
