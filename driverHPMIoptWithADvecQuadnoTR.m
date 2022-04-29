@@ -7,14 +7,10 @@ clear all
 clc
 
 mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',true)
 driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',true)
-driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',true)
-driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',true)
-driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
+%driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
+%driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
+%driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
 %% driverHPMIopt(5,3, 2,mynewoptions,'SumQuad')
 %% %driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
 %% %driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
@@ -70,11 +66,11 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType,GaussLegendre
   close all
   %% Tissue Parameters
-  T1pmean = [ 30 ]; % s
+  T1pmean = [ 43 ]; % s
   T1pstdd = [ 10 ]; % s
   T1plb   = [ 5  ]; % s
   T1pub   = [ 45 ]; % s
-  T1lmean = [ 25 ]; % s
+  T1lmean = [ 33 ]; % s
   T1lstdd = [ 10 ]; % s
   T1llb   = [  5 ]; % s
   T1lub   = [ 45 ]; % s
@@ -102,8 +98,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   currentTR = 3;
   TR_list = (0:(Ntime-1))*currentTR ;
   M0 = [0,0];
-  %ve = 0.95;
-  ve = 1.;
+  ve = 0.95;
+  %ve = 1.;
   VIF_scale_fact = [100;0];
   bb_flip_angle = 20;
   opts = optimset('lsqcurvefit');
@@ -276,8 +272,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
       %    
       %expATR = fcn2optimexpr(@expm,A*currentTR );
       % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
-      expATRoneone = exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)));
-      expATRtwoone = (kplqp.*exp(-currentTR*T1Lqp.^(-1)) - kplqp.*exp(-currentTR*(kplqp + kveqp + T1Pqp.^(-1)))).* (kplqp + kveqp - T1Lqp.^(-1) + T1Pqp.^(-1)).^(-1);
+      expATRoneone = exp(-currentTR*(kplqp + kveqp/ve + T1Pqp.^(-1)));
+      expATRtwoone = (kplqp.*exp(-currentTR*T1Lqp.^(-1)) - kplqp.*exp(-currentTR*(kplqp + kveqp/ve + T1Pqp.^(-1)))).* (kplqp + kveqp/ve - T1Lqp.^(-1) + T1Pqp.^(-1)).^(-1);
       expATRtwotwo = exp(-currentTR * T1Lqp.^(-1));
       % [expATRoneone(end),0; expATRtwoone(end), expATRtwotwo(end)]
       % IC
@@ -290,9 +286,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
           integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
           %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
           integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
-          aiftermpyr = deltat * kveqp.*   exp((- T1Pqp.^(-1) - kplqp - kveqp)*(TRList(iii+1)-deltat*[.5:1:nsubstep])) .* integrand ; 
-          aiftermlac = deltat * kveqp.*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp)*(TRList(iii+1)-deltat*[.5:1:nsubstep]) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]))).* ((T1Pqp.^(-1) + kplqp + kveqp) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
-          % integrand(end,:)'; kveqp(end);[ sum(aiftermpyr,2) ,sum(aiftermlac,2)]
+          aiftermpyr = deltat * (kveqp/ve).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep])) .* integrand ; 
+          aiftermlac = deltat * (kveqp/ve).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
   
           % setup state as linear constraint
           auxvariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( auxvariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
