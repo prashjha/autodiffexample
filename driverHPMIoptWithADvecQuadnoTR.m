@@ -8,10 +8,13 @@ clc
 
 mynewoptions.Algorithm = 'constDirect'
 driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
-%driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
-%driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
-%driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
-%% driverHPMIopt(5,3, 2,mynewoptions,'SumQuad')
+driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
+driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
+driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
+driverHPMIopt(5,3, 2,mynewoptions,'SumQuad',false)
+driverHPMIopt(5,3, 5,mynewoptions,'SumQuad',false)
+driverHPMIopt(5,3,10,mynewoptions,'SumQuad',false)
+driverHPMIopt(5,3,20,mynewoptions,'SumQuad',false)
 %% %driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
 %% %driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
 %% %driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
@@ -33,11 +36,11 @@ driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
 %% driverHPMIopt(5,3,25,myoptions,'SumQuad')
 %% 
 %% 
-%% myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
-%% driverHPMIopt(5,3, 2,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3,10,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3,20,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3,25,myoptions,'TotalSignal')
+myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
+driverHPMIopt(5,3, 2,myoptions,'TotalSignal')
+driverHPMIopt(5,3, 5,myoptions,'TotalSignal')
+driverHPMIopt(5,3,10,myoptions,'TotalSignal')
+driverHPMIopt(5,3,20,myoptions,'TotalSignal')
 %% driverHPMIopt(5,3, 2,myoptions,'SumQuad')
 %% driverHPMIopt(5,3,10,myoptions,'SumQuad')
 %% driverHPMIopt(5,3,20,myoptions,'SumQuad')
@@ -307,7 +310,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
             % sumstatevariable = squeeze(sum(repmat(sin(FaList)',1,1,lqp).*statevariable,1));
             sumstatevariable = optimexpr([Nspecies,lqp]);
             for jjj = 1:lqp
-               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*statevariable(:,:,jjj),1)';
+               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TRList - t0qp(jjj)  , jmalpha , jmbeta);zeros(1,Ntime)]'  ),1)';
+
             end 
             diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
             negHz = 0;
@@ -320,7 +324,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
           case('SumQuad')
             sumstatevariable = optimexpr([Nspecies,lqp]);
             for jjj = 1:lqp
-               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*statevariable(:,:,jjj),1)';
+               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TRList - t0qp(jjj)  , jmalpha , jmbeta);zeros(1,Ntime)]'  ),1)';
             end 
             % max total signal sum
             negHz=-sum(sum(sumstatevariable)) ;
