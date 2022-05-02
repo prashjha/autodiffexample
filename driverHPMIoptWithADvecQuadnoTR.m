@@ -37,14 +37,14 @@ driverHPMIopt(5,3,20,mynewoptions,'SumQuad',false)
 %% 
 %% 
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
-driverHPMIopt(5,3, 2,myoptions,'TotalSignal')
-driverHPMIopt(5,3, 5,myoptions,'TotalSignal')
-driverHPMIopt(5,3,10,myoptions,'TotalSignal')
-driverHPMIopt(5,3,20,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3, 2,myoptions,'SumQuad')
-%% driverHPMIopt(5,3,10,myoptions,'SumQuad')
-%% driverHPMIopt(5,3,20,myoptions,'SumQuad')
-%% driverHPMIopt(5,3,25,myoptions,'SumQuad')
+driverHPMIopt(5,3, 2,myoptions,'TotalSignal',false)
+driverHPMIopt(5,3, 5,myoptions,'TotalSignal',false)
+driverHPMIopt(5,3,10,myoptions,'TotalSignal',false)
+driverHPMIopt(5,3,20,myoptions,'TotalSignal',false)
+driverHPMIopt(5,3, 2,myoptions,'SumQuad',false)
+driverHPMIopt(5,3, 5,myoptions,'SumQuad',false)
+driverHPMIopt(5,3,10,myoptions,'SumQuad',false)
+driverHPMIopt(5,3,20,myoptions,'SumQuad',false)
 %% 
 
 %%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
