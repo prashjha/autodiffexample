@@ -212,16 +212,13 @@ for idesign = 1:length(solnList)
      % >> expATR = expm([a,  0; kpl, d ] * currentTR )
      % 
      % expATR =
-     % 
      % [                                     exp(a*currentTR),                0]
      % [(kpl*exp(a*currentTR) - kpl*exp(currentTR*d))/(a - d), exp(currentTR*d)]
      % 
      % >> a = -1/T1P - kpl - kveqp
      % >> d = -1/T1L
      % >> eval(expATR)
-     % 
      % ans =
-     % 
      % [                                                              exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0]
      % [(kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)]
      %    
@@ -229,10 +226,10 @@ for idesign = 1:length(solnList)
      % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
      expATR = [ exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0; (kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)];
      % mid-point rule integration
-     aifterm = kveqp * deltat * [ exp((-1/T1P - kpl - kveqp)*deltat*[.5:1:nsubstep] );
-   (kpl*exp((-1/T1P - kpl - kveqp)*deltat*[.5:1:nsubstep] ) - kpl*exp(-1/T1L *deltat*[.5:1:nsubstep] ))/((-1/T1P - kpl - kveqp) + 1/T1L )] * integrand ;
+     aifterm = kveqp * deltat * [ exp((-1/T1P - kpl - kveqp)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) );
+   (kpl*exp((-1/T1P - kpl - kveqp)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) ) - kpl*exp(-1/T1L *(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep])))/((-1/T1P - kpl - kveqp) + 1/T1L )] * integrand ;
      statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
-     statesignal(:,iii+1)   =  sin(solnList(idesign ).FaList(:,iii+1)).* statevariable(:,iii+1);
+     statesignal(:,iii+1)   =  fcn2optimexpr(@(newbolusstart)sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * gampdf( solnList(idesign ).params.TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ) ),t0 ) ;
      statevariable(:,iii+1) =  cos(solnList(idesign ).FaList(:,iii+1)).* statevariable(:,iii+1);
    end
    truthstate  = evaluate(statevariable ,xstar);
