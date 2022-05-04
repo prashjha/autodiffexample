@@ -229,7 +229,10 @@ for idesign = 1:length(solnList)
      aifterm = kveqp * deltat * [ exp((-1/T1P - kpl - kveqp)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) );
    (kpl*exp((-1/T1P - kpl - kveqp)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) ) - kpl*exp(-1/T1L *(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep])))/((-1/T1P - kpl - kveqp) + 1/T1L )] * integrand ;
      statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
-     statesignal(:,iii+1)   =  fcn2optimexpr(@(newbolusstart)sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * gampdf( solnList(idesign ).params.TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ) ),t0 ) ;
+     % 
+     % TODO TODO - NOTE  that a simple change to minimize the expression within fcn2optimexpr is the difference between the code running or NOT
+     % DOES NOT RUN with this EXPRESSION: statesignal(:,iii+1)   =  fcn2optimexpr(@(newbolusstart)sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * gampdf( solnList(idesign ).params.TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ) ),t0 ) ;
+     statesignal(:,iii+1)   =  sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * fcn2optimexpr(@(newbolusstart)gampdf( solnList(idesign ).params.TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ),t0 ) ) ;
      statevariable(:,iii+1) =  cos(solnList(idesign ).FaList(:,iii+1)).* statevariable(:,iii+1);
    end
    truthstate  = evaluate(statevariable ,xstar);
