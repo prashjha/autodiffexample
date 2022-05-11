@@ -101,8 +101,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   currentTR = 3;
   TR_list = (0:(Ntime-1))*currentTR ;
   M0 = [0,0];
-  ve = 0.95;
-  %ve = 1.;
+  %ve = 0.95;
+  ve = 1.;
   VIF_scale_fact = [100;0];
   bb_flip_angle = 20;
   opts = optimset('lsqcurvefit');
@@ -112,7 +112,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   params = struct('t0',[t0mean(1);0],'gammaPdfA',[alphamean(1)  ;1],'gammaPdfB',[betamean(1);1],...
       'scaleFactor',VIF_scale_fact,'T1s',[T1pmean(1),T1lmean(1)],'ExchangeTerms',[0,kplmean(1) ;0,0],...
       'TRList',TR_list,'PerfusionTerms',[kvemean(1),0],'volumeFractions',ve,...
-      'fitOptions', opts);
+      'fitOptions', opts)
   model = HPKinetics.NewMultiPoolTofftsGammaVIF();
   
   

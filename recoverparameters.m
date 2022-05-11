@@ -142,7 +142,7 @@ for idesign = 1:length(solnList)
    switch (numberParameters)
        case(1) 
          kpl   = optimvar('kpl','LowerBound',0);
-         kveqp = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
+         kveqp = solnList(idesign ).params.PerfusionTerms(1) ;
          T1P   = solnList(idesign ).params.T1s(1);
          T1L   = solnList(idesign ).params.T1s(2);
          t0    = solnList(idesign ).params.t0(1);
@@ -156,7 +156,7 @@ for idesign = 1:length(solnList)
          t0    = solnList(idesign ).params.t0(1);
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2); 
-         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions; 
+         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) ;
        case(3) 
          kpl   = optimvar('kpl','LowerBound',0);
          kveqp = optimvar('kveqp','LowerBound',0);
@@ -165,7 +165,7 @@ for idesign = 1:length(solnList)
          T1L   = solnList(idesign ).params.T1s(2);        
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2); 
-         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions; 
+         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) ; 
          xstar.t0         = solnList(idesign ).params.t0(1);
        case(4) 
          kpl   = optimvar('kpl','LowerBound',0);
@@ -175,7 +175,7 @@ for idesign = 1:length(solnList)
          t0    = solnList(idesign ).params.t0(1);
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2);
-         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
+         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1);
          xstar.T1P        = solnList(idesign ).params.T1s(1);
          xstar.T1L        = solnList(idesign ).params.T1s(2);
        case(5) 
@@ -186,7 +186,7 @@ for idesign = 1:length(solnList)
          t0  = optimvar('t0' ,'LowerBound',0);
          % ground truth 
          xstar.kpl        = solnList(idesign).params.ExchangeTerms(1,2); 
-         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
+         xstar.kveqp      = solnList(idesign ).params.PerfusionTerms(1);
          xstar.T1P        = solnList(idesign ).params.T1s(1);        
          xstar.T1L        = solnList(idesign ).params.T1s(2);        
          xstar.t0         = solnList(idesign ).params.t0(1);
@@ -224,10 +224,10 @@ for idesign = 1:length(solnList)
      %    
      %expATR = fcn2optimexpr(@expm,A*currentTR );
      % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
-     expATR = [ exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0; (kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)];
+     expATR = [ exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)),                   0; (kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)))/(kpl + kveqp/solnList(idesign ).params.volumeFractions - 1/T1L + 1/T1P), exp(-currentTR/T1L)];
      % mid-point rule integration
-     aifterm = kveqp * deltat * [ exp((-1/T1P - kpl - kveqp)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) );
-   (kpl*exp((-1/T1P - kpl - kveqp)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) ) - kpl*exp(-1/T1L *(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep])))/((-1/T1P - kpl - kveqp) + 1/T1L )] * integrand ;
+     aifterm = kveqp/solnList(idesign ).params.volumeFractions * deltat * [ exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) );
+   (kpl*exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) ) - kpl*exp(-1/T1L *(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep])))/((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions) + 1/T1L )] * integrand ;
      statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
      % 
      % TODO TODO - NOTE  that a simple change to minimize the expression within fcn2optimexpr is the difference between the code running or NOT
