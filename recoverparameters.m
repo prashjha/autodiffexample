@@ -17,8 +17,7 @@ snrList = [2,10,25]
 snrList = [2,10,20,25]
 snrList = [2,5,10,20]
 % pareto trade off total signal vs MI
-myFAList =  repmat([6:6:35],2,1);
-myFAList(:,end)  =  35;
+myFAList =  repmat([3 35],2,1);
 myFAList(2,:) =  28;
 
 numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
@@ -42,7 +41,7 @@ end
 Ntime    = size(solnList(1).Mz,2);
 Nspecies = size(solnList(1).Mz,1);
 
-% compute variance for each SNR
+% compute variance for each SNR for 20/30 pyr/lac FA
 for isnr = 1:length(snrList)
    icount= icount+1;
    solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','objective','Max','plotlabel','constMax','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
@@ -78,13 +77,13 @@ end
 
 %UB/LB for MI solution
 hacksolvertype='interior-point'
-hackgpList=3
+hackgpList=5
 for isnr = 1:length(snrList)
-   worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(1)));
+   worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(1)));
    icount= icount+1;
    solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',hacksolvertype,ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
 
-   worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02d.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(end)));
+   worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(end)));
    icount= icount+1;
    solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',hacksolvertype,ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
 end

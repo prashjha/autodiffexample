@@ -7,59 +7,28 @@ clear all
 clc
 
 mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
 driverHPMIopt(5,3, 2,mynewoptions,'SumQuad',false)
 driverHPMIopt(5,3, 5,mynewoptions,'SumQuad',false)
 driverHPMIopt(5,3,10,mynewoptions,'SumQuad',false)
+driverHPMIopt(5,3,15,mynewoptions,'SumQuad',false)
 driverHPMIopt(5,3,20,mynewoptions,'SumQuad',false)
-%% %driverHPMIopt(3,3, 2,mynewoptions,'MaxSignal')
-%% %driverHPMIopt(3,3,10,mynewoptions,'MaxSignal')
-%% %driverHPMIopt(3,3,20,mynewoptions,'MaxSignal')
-%% %driverHPMIopt(3,3,25,mynewoptions,'MaxSignal')
-%% %driverHPMIopt(3,3, 2,mynewoptions,'MaxSignalDiff')
-%% %driverHPMIopt(3,3,10,mynewoptions,'MaxSignalDiff')
-%% %driverHPMIopt(3,3,20,mynewoptions,'MaxSignalDiff')
-%% %driverHPMIopt(3,3,25,mynewoptions,'MaxSignalDiff')
-%% 
-%% 
-%% myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
-%% driverHPMIopt(5,3, 2,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3,10,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3,20,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3,25,myoptions,'TotalSignal')
-%% driverHPMIopt(5,3, 2,myoptions,'SumQuad')
-%% driverHPMIopt(5,3,10,myoptions,'SumQuad')
-%% driverHPMIopt(5,3,20,myoptions,'SumQuad')
-%% driverHPMIopt(5,3,25,myoptions,'SumQuad')
-%% 
-%% 
+driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
+driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
+driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
+driverHPMIopt(5,3,15,mynewoptions,'TotalSignal',false)
+driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
+%
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
 driverHPMIopt(5,3, 2,myoptions,'TotalSignal',false)
 driverHPMIopt(5,3, 5,myoptions,'TotalSignal',false)
 driverHPMIopt(5,3,10,myoptions,'TotalSignal',false)
+driverHPMIopt(5,3,15,myoptions,'TotalSignal',false)
 driverHPMIopt(5,3,20,myoptions,'TotalSignal',false)
 driverHPMIopt(5,3, 2,myoptions,'SumQuad',false)
 driverHPMIopt(5,3, 5,myoptions,'SumQuad',false)
 driverHPMIopt(5,3,10,myoptions,'SumQuad',false)
+driverHPMIopt(5,3,15,myoptions,'SumQuad',false)
 driverHPMIopt(5,3,20,myoptions,'SumQuad',false)
-%% 
-
-%%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
-%%       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','StepTolerance',1.000000e-16)
-%driverHPMIopt(4,3, 2,myoptions)
-%driverHPMIopt(4,3, 5,myoptions)
-%driverHPMIopt(4,3, 8,myoptions)
-%driverHPMIopt(4,3,10,myoptions)
-%driverHPMIopt(4,3,12,myoptions)
-%driverHPMIopt(4,3,15,myoptions)
-%driverHPMIopt(4,3,20,myoptions)
-%driverHPMIopt(4,3,22,myoptions)
-%driverHPMIopt(4,3,25,myoptions)
-%driverHPMIopt(5,3,10,myoptions)
-
 
 %% % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
@@ -69,11 +38,11 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType,GaussLegendre
   close all
   %% Tissue Parameters
-  T1pmean = [ 43 ]; % s
+  T1pmean = [ 30 ]; % s
   T1pstdd = [ 10 ]; % s
   T1plb   = [ 5  ]; % s
   T1pub   = [ 45 ]; % s
-  T1lmean = [ 33 ]; % s
+  T1lmean = [ 25 ]; % s
   T1lstdd = [ 10 ]; % s
   T1llb   = [  5 ]; % s
   T1lub   = [ 45 ]; % s
@@ -101,8 +70,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   currentTR = 3;
   TR_list = (0:(Ntime-1))*currentTR ;
   M0 = [0,0];
-  %ve = 0.95;
-  ve = 1.;
+  ve = 0.95;
+  %ve = 1.;
   VIF_scale_fact = [100;0];
   bb_flip_angle = 20;
   opts = optimset('lsqcurvefit');
@@ -289,6 +258,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
           integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
           %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
           integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
+          %% aiftermpyr = deltat * (kveqp/ve).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(deltat*[.5:1:nsubstep])) .* integrand ; 
+          %% aiftermlac = deltat * (kveqp/ve).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(deltat*[.5:1:nsubstep]) ) + kplqp.*exp(-T1Lqp.^(-1) *(deltat*[.5:1:nsubstep]))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
           aiftermpyr = deltat * (kveqp/ve).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep])) .* integrand ; 
           aiftermlac = deltat * (kveqp/ve).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
   
