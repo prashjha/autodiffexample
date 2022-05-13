@@ -15,37 +15,49 @@ uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
 snrList = [2,10,20,25]
+snrList = [2,5,10,15,20]
 snrList = [2,5,10,20]
 % pareto trade off total signal vs MI
+
+myFAList =  repmat([6:6:35],2,1);
+myFAList(:,end)  =  35;
+myFAList(2,:) =  28;
+
 myFAList =  repmat([3 35],2,1);
 myFAList(2,:) =  28;
 
-numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
+
+
+%numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
+numsolves =  (2+size(myFAList,2)+2)*length(snrList) 
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[],'objective',[],'plotlabel',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[]);
 icount  = 0;
-for iobj = 1:numel(ObjectiveType)
- for isolver = 1:numel(solverType)
-  for igp = 1:length(gpList)
-   for inu = 1:length(uncertainList)
-    for isnr = 1:length(snrList)
-       worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{iobj},snrList(isnr)));
-       icount= icount+1;
-       solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'objective',ObjectiveType{iobj},'plotlabel',sprintf('%s%s',solverType{isolver},ObjectiveType{iobj}),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',worktmp.fval);
-    end
-   end
-  end
- end
+%% for iobj = 1:numel(ObjectiveType)
+%%  for isolver = 1:numel(solverType)
+%%   for igp = 1:length(gpList)
+%%    for inu = 1:length(uncertainList)
+%%     for isnr = 1:length(snrList)
+%%        worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',gpList(igp),uncertainList(inu),solverType{isolver},ObjectiveType{iobj},snrList(isnr)));
+%%        icount= icount+1;
+%%        solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(inu),'FaList',worktmp.popt.FaList,'solver',solverType{isolver},'objective',ObjectiveType{iobj},'plotlabel',sprintf('%s%s',solverType{isolver},ObjectiveType{iobj}),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',worktmp.fval);
+%%     end
+%%    end
+%%   end
+%%  end
+%% end
+
+% compute variance for each SNR for 20/30 pyr/lac FA
+hackuncertainList=3
+hackgpList=5
+for isnr = 1:length(snrList)
+   icount= icount+1;
+   worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,'constDirect','TotalSignal',snrList(isnr)));
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','objective','Max','plotlabel','constMax','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',NaN);
 end
 
 % array info
 Ntime    = size(solnList(1).Mz,2);
 Nspecies = size(solnList(1).Mz,1);
-
-% compute variance for each SNR for 20/30 pyr/lac FA
-for isnr = 1:length(snrList)
-   icount= icount+1;
-   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','objective','Max','plotlabel','constMax','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
-end
 
 % establish control
 cntrlparams = worktmp.params;
@@ -77,15 +89,16 @@ end
 
 %UB/LB for MI solution
 hacksolvertype='interior-point'
-hackgpList=5
 for isnr = 1:length(snrList)
-   worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(1)));
+   worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(1)));
    icount= icount+1;
-   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',hacksolvertype,ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sLB',hacksolvertype,ObjectiveType{1} ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+end
 
-   worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,uncertainList(1),hacksolvertype,ObjectiveType{1},snrList(end)));
+for isnr = 1:length(snrList)
+   worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(end)));
    icount= icount+1;
-   solnList (icount) = struct('gp',gpList(igp),'snr',snrList(isnr),'numberuncertain',uncertainList(1),'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%s%02d',hacksolvertype,ObjectiveType{1},snrList(isnr) ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sUB',hacksolvertype,ObjectiveType{1} ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
 end
 
 % extract timehistory info
@@ -135,7 +148,8 @@ storekveqpopt = zeros(num_trials+1,length(solnList));
 storeT1Popt   = zeros(num_trials+1,length(solnList));
 storeT1Lopt   = zeros(num_trials+1,length(solnList));
 storet0opt    = zeros(num_trials+1,length(solnList));
-for idesign = 1:length(solnList)
+%for idesign = 1:length(solnList)
+for idesign =13:16
    % setup optimization variables
    numberParameters = 3
    switch (numberParameters)
