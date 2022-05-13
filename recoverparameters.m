@@ -305,7 +305,7 @@ for idesign =13:16
        switch (numberParameters)
           case(1) 
             storekplopt(  idtrial,idesign)  = popt.kpl;
-            storekveqpopt(idtrial,idesign)  = solnList(idesign ).params.PerfusionTerms(1) / solnList(idesign ).params.volumeFractions;
+            storekveqpopt(idtrial,idesign)  = solnList(idesign ).params.PerfusionTerms(1);
             storeT1Popt(  idtrial,idesign)  = solnList(idesign ).params.T1s(1);
             storeT1Lopt(  idtrial,idesign)  = solnList(idesign ).params.T1s(2);
             storet0opt (  idtrial,idesign)  = solnList(idesign ).params.t0(1);
