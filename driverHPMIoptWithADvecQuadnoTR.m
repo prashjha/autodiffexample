@@ -19,7 +19,7 @@ driverHPMIopt(5,3,15,mynewoptions,'TotalSignal',false)
 driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
 %
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
-%% driverHPMIopt(3,3,20,myoptions,'TotalSignal',false)
+%%driverHPMIopt(3,3,20,myoptions,'TotalSignal',false)
 driverHPMIopt(5,3, 2,myoptions,'TotalSignal',false)
 driverHPMIopt(5,3, 5,myoptions,'TotalSignal',false)
 driverHPMIopt(5,3,10,myoptions,'TotalSignal',false)
@@ -259,10 +259,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
           integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
           %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
           integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
-          aiftermpyr = deltat * (kveqp/ve).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(deltat*[.5:1:nsubstep])) .* integrand ; 
-          aiftermlac = deltat * (kveqp/ve).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(deltat*[.5:1:nsubstep]) ) + kplqp.*exp(-T1Lqp.^(-1) *(deltat*[.5:1:nsubstep]))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
-          %% aiftermpyr = deltat * (kveqp/ve).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep])) .* integrand ; 
-          %% aiftermlac = deltat * (kveqp/ve).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
+          aiftermpyr = deltat * (kveqp/ve).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii))) .* integrand ; 
+          aiftermlac = deltat * (kveqp/ve).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
   
           % setup state as linear constraint
           auxvariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( auxvariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
