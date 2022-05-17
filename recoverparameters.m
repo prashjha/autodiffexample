@@ -15,8 +15,8 @@ uncertainList = [3]
 snrList = [2,10]
 snrList = [2,10,25]
 snrList = [2,10,20,25]
-snrList = [2,5,10,15,20]
 snrList = [2,5,10,20]
+snrList = [2,5,10,15,20]
 % pareto trade off total signal vs MI
 
 myFAList =  repmat([6:6:35],2,1);
@@ -148,8 +148,8 @@ storekveqpopt = zeros(num_trials+1,length(solnList));
 storeT1Popt   = zeros(num_trials+1,length(solnList));
 storeT1Lopt   = zeros(num_trials+1,length(solnList));
 storet0opt    = zeros(num_trials+1,length(solnList));
-%for idesign = 1:length(solnList)
-for idesign =13:16
+for idesign = 1:length(solnList)
+%for idesign =13:16
    % setup optimization variables
    numberParameters = 3
    switch (numberParameters)
@@ -239,8 +239,8 @@ for idesign =13:16
      % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
      expATR = [ exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)),                   0; (kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)))/(kpl + kveqp/solnList(idesign ).params.volumeFractions - 1/T1L + 1/T1P), exp(-currentTR/T1L)];
      % mid-point rule integration
-     aifterm = kveqp/solnList(idesign ).params.volumeFractions * deltat * [ exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) );
-   (kpl*exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]) ) - kpl*exp(-1/T1L *(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep])))/((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions) + 1/T1L )] * integrand ;
+     aifterm = kveqp/solnList(idesign ).params.volumeFractions * deltat * [ exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).params.TRList(iii)) );
+   (kpl*exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).params.TRList(iii)) ) - kpl*exp(-1/T1L *(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).params.TRList(iii))))/((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions) + 1/T1L )] * integrand ;
      statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
      % 
      % TODO TODO - NOTE  that a simple change to minimize the expression within fcn2optimexpr is the difference between the code running or NOT
