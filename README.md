@@ -15,5 +15,5 @@
      >> worktmpUB.params.FaList
 ```
 
-[^1]  $\kk_{OED_{20}}$ 
-[^2]  $\kk_{OED_{2}}$ 
+[^1]: $\kk_{OED_{20}}$ 
+[^2]: $\kk_{OED_{2}}$ 
