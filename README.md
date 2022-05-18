@@ -15,5 +15,10 @@
      >> worktmpUB.params.FaList
 ```
 
+### Model parameters 
+```
+     >> worktmpLB.params
+```
+
 [^1]: $\kk_{OED_{20}}$ 
 [^2]: $\kk_{OED_{2}}$ 
