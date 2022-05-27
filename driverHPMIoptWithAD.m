@@ -6,41 +6,43 @@
 clear all
 close all
 clc
-N_vect = round(linspace(5,60,15));
-%% Variable Setup
-Ntime = 3;
-TR = 2;
-TR_list = (0:(Ntime-1))*TR;
-T1a = 43;
-T1b = 33;
-Kpl = 0.1;
-alpha = 2.5;
-beta = 4.5;
-M0 = [0,0];
-kve = 0.02;
-ve = 0.95;
-VIF_scale_fact = [1;0];
-bb_flip_angle = 20;
-opts = optimset('lsqcurvefit');
-opts.TolFun = 1e-09;
-opts.TolX = 1e-09;
-opts.Display = 'off';
-params = struct('t0',[0;0],'gammaPdfA',[alpha;1],'gammaPdfB',[beta;1],...
-    'scaleFactor',VIF_scale_fact,'T1s',[T1a,T1b],'ExchangeTerms',[0,Kpl;0,0],...
-    'TRList',TR_list,'PerfusionTerms',[kve,0],'volumeFractions',ve,...
-    'fitOptions', opts);
-model = HPKinetics.NewMultiPoolTofftsGammaVIF();
 
 %% Tissue Parameters
 T1pmean = [ 30 ]; % s
 T1pstdd = [ 10 ]; % s
 T1lmean = [ 25 ]; % s
 T1lstdd = [ 10 ]; % s
-kplmean = [ 5 ];       % s
-kplstdd = [ 5 ];       % s
-kvemean = [ 0.15 ];       % s
-kvestdd = [ .05  ];       % s
-tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd];
+kplmean = [ .15 ];       % s
+kplstdd = [ .03 ];       % s
+kvemean = [ 0.05 ];       % s
+kvestdd = [ .01  ];       % s
+t0mean  = [ 4    ];       % s
+t0sttd  = [ 1.3  ] ;       % s
+alphamean  =  [2.5];
+alphasttd  =  [.3];
+betamean  =  [4.5];
+betasttd  =  [.3];
+tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
+
+%% Variable Setup
+Ntime = 30;
+TR = 3;
+TR_list = (0:(Ntime-1))*TR;
+M0 = [0,0];
+%ve = 0.95;
+ve = 1.;
+VIF_scale_fact = [100;0];
+bb_flip_angle = 20;
+opts = optimset('lsqcurvefit');
+opts.TolFun = 1e-09;
+opts.TolX = 1e-09;
+opts.Display = 'off';
+params = struct('t0',[t0mean(1);0],'gammaPdfA',[alphamean(1)  ;1],'gammaPdfB',[betamean(1);1],...
+    'scaleFactor',VIF_scale_fact,'T1s',[T1pmean(1),T1lmean(1)],'ExchangeTerms',[0,kplmean(1) ;0,0],...
+    'TRList',TR_list,'PerfusionTerms',[kvemean(1),0],'volumeFractions',ve,...
+    'fitOptions', opts);
+model = HPKinetics.NewMultiPoolTofftsGammaVIF();
+  
 
 %% Get true Mz
 %% Choose Excitation Angle
@@ -49,9 +51,6 @@ FAType = {'Const'};
 for i = 1:numel(FAType)
     switch (FAType{i})
         case('Const') % Nagashima for lactate const 10 pyruvate
-            tic
-            E1(1) = exp(-TR*(1/T1a+Kpl));
-            E1(2) = exp(-TR/T1b);
             for n = 1:Ntime
                 %flips(2,n) = acos(sqrt((E1(2)^2-E1(2)^(2*(N-n+1)))/(1-E1(2)^(2*(N-n+1)))));
                 flips(2,n) = 15*pi/180;
@@ -59,10 +58,8 @@ for i = 1:numel(FAType)
             end
             params.FaList = flips;
     end
-    tic
     %% Fitting
     [t_axis,Mxy,Mz] = model.compile(M0.',params);
-    toc
     save_Mxy{i} = Mxy;
     save_Mz{i} = Mz;
     save_t_axis{i} = t_axis;
@@ -88,32 +85,21 @@ if plotinit
     xlabel('sec')
 
     % plot gamma
-    jmA0    = 10.
-    jmalpha = 2.5
-    jmbeta  = 4.5
-    jmt0    = 0
+    jmA0    = VIF_scale_fact(1);
+    jmalpha = alphamean(1);
+    jmbeta  = betamean(1);
+    jmt0    = t0mean(1);
     jmaif   = jmA0  * gampdf(TR_list - jmt0  , jmalpha , jmbeta);
-    figure(20)
+    figure(4)
     plot(TR_list,jmaif ,'b')
     ylabel('aif')
     xlabel('sec')
 end
 
 
-%% compute TR's from TR_list
-TRi = getTR(TR_list); % vector of 'size(TR_list) - 1'
-
 %% optimize MI for TR and FA
 optf = true;
 if optf
-    % Pulse Sequence Bounds
-    pmin =  [TRi'-1.5; flips(:)*0];     % <-- constraints on TR's and not TR_list
-    pmax =  [TRi'+1.5; flips(:)*0+pi/2];% <-- constraints on TR's and not TR_list
-    findiffrelstep=1.e-6;
-    tolx=1.e-9;%1.e-5;
-    tolfun=1.e-9;%1.e-5;QALAS_synphan_MIcalc.m
-    maxiter=500;
-
     tic;
     % Convert this function file to an optimization expression.
     
@@ -124,40 +110,57 @@ if optf
 
     % setup optimization variables
     Nspecies = 2
-    FaList = optimvar('FaList',2,Ntime);
-    TRList = optimvar('TRList',1,Ntime);
-    diffTR = diff(TRList);
-    NGauss  = 2
-    [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+    FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
+    TRList = TR_list;
+    NGauss  = 3
+    NumberUncertain=3;
+    switch (NumberUncertain)
+       case(3)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+       case(4)
+         [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
+    end 
     lqp=length(xn{1}(:));
-    statevariable  = optimexpr([Nspecies,Ntime,lqp]);
+    statevariable    = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
+    auxvariable      = optimexpr(    [Nspecies,Ntime,lqp]);
+    stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
 
-    signu = 10 ; % TODO - FIXME
+    modelSNR = 10 ; % TODO - FIXME
+    signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
+    % variance for Gauss RV is sum. sqrt for std
+    signu = sqrt(2* Ntime) * signuImage;
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
 
     disp('build state variable')
+    stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
+    auxvariable(:,1,:) =0;
     for iqp = 1:lqp
       for iii = 1:Ntime-1
-        % disp([Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1 , Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2 ,Ntime* Nspecies* lqp])
-        T1Pqp = xn{1}(iqp);
-        T1Lqp = xn{2}(iqp);
-        kplqp = xn{3}(iqp);
-        klpqp =    0 ;     % @cmwalker where do I get this from ? 
-        kveqp = xn{4}(iqp);
-        %% A = [-1/T1Pqp - kplqp - kveqp,  klpqp; kplqp, -1/T1Lqp - klpqp];
-        %% [V,D] = eig(A);
-        %% expATR = V*[exp(D(1,1)*1.4) 0 ; 0 exp(D(2,2)*1.4)]*V^-1;
-        %% aifterm =  kveqp *(designvariable(3,iii+1)- designvariable(3,iii))* ( [jmA0 * (designvariable(3,iii+1)- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii+1)- jmt0 )/jmbeta);0] +  expATR * [jmA0 * (designvariable(3,iii  )- jmt0  ).^jmgamma .* exp(-(designvariable(3,iii  )- jmt0 )/jmbeta);0])/2;
-        %% governeqns(Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+1:Nspecies*Ntime*(iqp-1) + Nspecies*(iii-1)+2) = statevariable(:,iii+1,iqp ) -  expATR *statevariable(:,iii,iqp )   + aifterm       == 0;
-        currentTR = diffTR(iii);
+        switch (NumberUncertain)
+           case(3)
+             T1Pqp   = T1pmean;
+             T1Lqp   = T1lmean;
+             kplqp   = xn{1}(iqp);
+             klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+             kveqp   = xn{2}(iqp);
+             t0qp    = xn{3}(iqp); 
+           case(4)
+             T1Pqp   = xn{1}(iqp);
+             T1Lqp   = xn{2}(iqp);
+             kplqp   = xn{3}(iqp);
+             klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+             kveqp   = xn{4}(iqp);
+             t0qp    = t0mean(1); 
+        end 
+        %
+        currentTR = TR ;
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
-        %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
-        % TODO - FIXME - more elegant way ?
-        integratedt = [TRList(iii)+deltat/2, TRList(iii)+3*deltat/2,TRList(iii)+5*deltat/2,TRList(iii)+7*deltat/2,TRList(iii)+9*deltat/2,TRList(iii)+11*deltat/2]  ;
-        integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-jmt0,jmalpha,jmbeta) ;
+        % setup AIF
+        integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
+        integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )
         % 
@@ -175,87 +178,110 @@ if optf
         % [                                                              exp(-currentTR*(kpl + kveqp + 1/T1P)),                   0]
         % [(kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)]
         %    
-        %expATR = fcn2optimexpr(@expm,A*currentTR );
-        % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
+        % linear approximation of aif    
+        % >> syms tk tkm1 tau a gammak gammakm1
+        % >> 
+        % >> aifexpr = exp(a*(tk-tau)) *  (gammak * (tau - tkm1)/(tk-tkm1 ) + gammakm1 * (tk - tau )/(tk-tkm1 ) )  
+        % >> aifint = int(aifexpr,tau,tkm1,tk)
+        % aifint = -(gammak - gammakm1 - gammak*exp(a*tk - a*tkm1) + gammakm1*exp(a*tk - a*tkm1) + a*gammak*tk - a*gammak*tkm1 - a*gammakm1*tk*exp(a*tk - a*tkm1) + a*gammakm1*tkm1*exp(a*tk - a*tkm1))/(a^2*(tk - tkm1))
+
         expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
         % mid-point rule integration
         aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
-    (kplqp*exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) - kplqp*exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/((-1/T1Pqp - kplqp - kveqp) + 1/T1Lqp )] * integrand ;
-        statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp ))   + aifterm ;
-        %statevariable(:,iii+1,iqp) =  expATR *( statevariable(:,iii,iqp )) ;
-        statevariable(:,iii+1,iqp) =  cos(FaList(:,iii+1)).* statevariable(:,iii+1,iqp);
+    kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand ;
+        auxvariable(:,iii+1,iqp) =  expATR *(cos(FaList(:,iii)).*auxvariable(:,iii,iqp ))   + aifterm ;
+        stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii)).*statevariable(:,iii,iqp ))   + aifterm ;
       end
     end
 
     disp('build objective function')
-    sumstatevariable = squeeze(sum(statevariable,2));
+    sumstatevariable = optimexpr([Nspecies,lqp]);
+    for jjj = 1:lqp
+       sumstatevariable(:,jjj) =  sum(sin(FaList).*statevariable(:,:,jjj),2);
+    end 
     %statematrix = optimexpr([lqp,lqp]);
-    diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
-    diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
+    expandvar  = ones(1,lqp);
+    diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
     Hz = 0;
     for jjj=1:lqp2
       znu=xn2{1}(jjj) ;
-      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/sqrt(2)/signu   - (znu + diffsummtwo).^2/sqrt(2)/signu  ) * wn(:)));
+      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+      %Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2                             ) * wn(:)));
     end
-    %% Hz = 0;
-    %% for iii=1:lqp
-    %%     for jjj=1:lqp2
-    %%         znu=xn2{1}(jjj) ;
-    %%         lntermtmp=0;
-    %%         for kkk=1:lqp
-    %%             lntermtmp=lntermtmp + wn(kkk) * exp(-(znu+sum(statevariable(1,:,iii))- sum(statevariable(1,:,kkk)))^2/sqrt(2)/signu);
-    %%             lntermtmp=lntermtmp + wn(kkk) * exp(-(znu+sum(statevariable(2,:,iii))- sum(statevariable(2,:,kkk)))^2/sqrt(2)/signu);
-    %%         end
-    %%         % for function
-    %%         lnterm = log(lntermtmp)+log(pi^(-1.5));
-    %%         Hz = Hz + wn(iii) * wn2(jjj) * lnterm;
-    %%     end
-    %% end
-    MIGaussObj = -pi^(-1.5-2.5)*Hz; 
+    %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
+    MIGaussObj = Hz;
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
-    convprob = optimproblem('Objective',MIGaussObj );
+    convprob = optimproblem('Objective',MIGaussObj , "Constraints",stateconstraint);
+    myidx = varindex(convprob )
     %% 
     % View the new problem.
     
     %show(convprob)
-    %problem = prob2struct(convprob,'ObjectiveFunctionName','generatedObjective');
+    problem = prob2struct(convprob,'ObjectiveFunctionName','reducedObjective','ConstraintFunctionName','reducedConstraint');
+    %% extraParamsobj = functions(problem.objective).workspace{1}.extraParams;
+    %% extraParamscon = functions(problem.nonlcon).workspace{1}.extraParams;
     %% 
     % Solve the new problem. The solution is essentially the same as before.
     
-    x0.FaList = params.FaList;
-    x0.TRList = params.TRList; 
-    myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
-    [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
-    %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
+    % truthconstraint = infeasibility(stateconstraint,x0);
+    InitialGuess =  [flips(:)];   
+    pmin =  [flips(:)*0];     
+    pmax =  [flips(:)*0+35*pi/180];
+    tolx=1.e-9;
+    tolfun=5.e-4;
+    maxiter=400;
+
+    Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable);
+    %% debug info
+    %% x0.FaList = params.FaList;
+    %% x0.state  = evaluate(auxvariable ,x0);
+    %% mystate = evaluate( sumstatevariable ,x0);
+    %% Xfull = [ x0.FaList(:); x0.state(:)];
+    %% [MIobjfun,initVals.g] = problem.objective(Xfull);
+    %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
+    %% [myobjfun, myobjfun_Der]= Fx(InitialGuess)
+    [designopt,fval,exitflag,output,lambda,grad,hessian] ...
+     =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
+        optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
+        maxiter,'Display','iter-detailed',... 
+        'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }) ...
+        );
 
     toc;
-
-    params.TRList = popt.TRList;
-    params.FaList = popt.FaList;
+    handle = figure(5)
+    optparams = params;
+    optparams.FaList = reshape(designopt(:),size(params.FaList ));
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    figure(4)
-    plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
+    figure(6)
+    plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
     xlabel('sec')
-    figure(5)
-    plot(params.TRList,params.FaList(1,:),'b',params.TRList,params.FaList(2,:),'k')
+    figure(7)
+    plot(optparams.TRList,optparams.FaList(1,:)*180/pi,'b',optparams.TRList,optparams.FaList(2,:)*180/pi,'k')
     ylabel('MI FA')
     xlabel('sec')
+    handle = figure(8)
+    plot(optparams.TRList,Mzopt(1,:),'b--',optparams.TRList,Mzopt(2,:),'k--')
+    ylabel('MI Mz ')
+    xlabel('sec'); legend('Pyr','Lac')
 end 
 
 
-%% convert time sequence to TR and TR to time sequence
-function TR = getTR(t)
-% compute TR from time sequence
-    N = size(t,2);
-    TR = zeros(1,N-1);
-    for i=1:(N-1)
-        TR(i) = t(i+1) - t(i);
-    end
+function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
+    x0.FaList = reshape(xopt,Nspecies,Ntime);
+    x0.state  = evaluate(auxvariable ,x0);
+    Xfull = [ x0.FaList(:); x0.state(:)];
+    [MIobjfun,initVals.g] = problem.objective(Xfull);
+    [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
+    objectiveGradFA    = initVals.g(myidx.FaList);
+    objectiveGradState = initVals.g(myidx.state);
+    jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
+    jacobianState = initConst.ceqGrad(myidx.state,:);
+    adjointvar =-jacobianState \objectiveGradState ;
+    MIobjfun_Der = objectiveGradFA +  jacobianFA *   adjointvar ;
 end
-

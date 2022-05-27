@@ -19,7 +19,7 @@ TR = 2;
 TR_list = (0:(Ntime-1))*TR;
 
 % plot gamma
-jmA0    = 1.
+jmA0    = 100.
 jmalpha = 2.5
 jmbeta  = 4.5
 jmt0    = 4
@@ -138,11 +138,12 @@ end
     figure(3)
     plot(params.TRList,walkerMz(1,:),'b--',params.TRList,walkerMz(2,:),'k--')
     hold
-    plot(params.TRList,statevariable(1,:),'b',params.TRList,statevariable(2,:),'k')
+    plot(params.TRList,cos(params.FaList(1,:)).*statevariable(1,:),'b',params.TRList,cos(params.FaList(2,:)).*statevariable(2,:),'k')
+    params.ExchangeTerms(1,2) = .75
+    [t_axis,walkerMxyhigh,walkerMzhigh] = model.compile(M0.',params);
+    plot(params.TRList,walkerMzhigh(1,:),'g--',params.TRList,walkerMzhigh(2,:),'r--')
+    params.ExchangeTerms(1,2) = .05
+    [t_axis,walkerMxylow,walkerMzlow] = model.compile(M0.',params);
+    plot(params.TRList,walkerMzlow(1,:),'g',params.TRList,walkerMzlow(2,:),'r')
 
-statevariablerep  = repmat(statevariable(:),27,1);
-Xtest = [params.FaList(:);statevariablerep  ];
-size(Xtest)
-adparam = load('extraParamsUncertain3NGauss3.mat')
-[initVals.f,initVals.g] = generatedObjective(Xtest,adparam.extraParams{:});
     

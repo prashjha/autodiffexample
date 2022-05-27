@@ -6,37 +6,22 @@
 clear all
 clc
 driverHPMIoptadj(3,3, 2)
-driverHPMIoptadj(3,3, 5)
-driverHPMIoptadj(3,3, 8)
 driverHPMIoptadj(3,3,10)
-driverHPMIoptadj(3,3,12)
-driverHPMIoptadj(3,3,15)
 driverHPMIoptadj(3,3,20)
-driverHPMIoptadj(3,3,22)
 driverHPMIoptadj(3,3,25)
 driverHPMIoptadj(4,3, 2)
-driverHPMIoptadj(4,3, 5)
-driverHPMIoptadj(4,3, 8)
 driverHPMIoptadj(4,3,10)
-driverHPMIoptadj(4,3,12)
-driverHPMIoptadj(4,3,15)
 driverHPMIoptadj(4,3,20)
-driverHPMIoptadj(4,3,22)
 driverHPMIoptadj(4,3,25)
 driverHPMIoptadj(5,3, 2)
-driverHPMIoptadj(5,3, 5)
-driverHPMIoptadj(5,3, 8)
 driverHPMIoptadj(5,3,10)
-driverHPMIoptadj(5,3,12)
-driverHPMIoptadj(5,3,15)
 driverHPMIoptadj(5,3,20)
-driverHPMIoptadj(5,3,22)
 driverHPMIoptadj(5,3,25)
 
 function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
   close all
   %% NGauss=3,NumberUncertain=3,SignalNoiseMI =10
-  NGauss,NumberUncertain,SignalNoiseMI 
+  %% NGauss,NumberUncertain,SignalNoiseMI 
 
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
@@ -57,13 +42,13 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
   
   
   %% Variable Setup
-  Ntime = 23;
-  TR = 2;
+  Ntime = 30;
+  TR = 3;
   TR_list = (0:(Ntime-1))*TR;
   M0 = [0,0];
   %ve = 0.95;
   ve = 1.;
-  VIF_scale_fact = [1;0];
+  VIF_scale_fact = [100;0];
   bb_flip_angle = 20;
   opts = optimset('lsqcurvefit');
   opts.TolFun = 1e-09;
@@ -150,7 +135,8 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       % signal sum  ==> signu = Ntime * signuImage 
       % noise calc max signal assuming total signal is sum of gaussian RV
       signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/SignalNoiseMI ;
-      signu = Ntime * signuImage;
+      % variance for Gauss RV is sum. sqrt for std
+      signu = sqrt(2* Ntime) * signuImage;
       params.SignalNoiseMI = signu;
       [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
@@ -195,18 +181,21 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       pmax =  [flips(:)*0+35*pi/180];
       findiffrelstep=1.e-6;
       tolx=1.e-9;%1.e-5;
-      tolfun=1.e-9;%1.e-5;QALAS_synphan_MIcalc.m
+      tolfun=5.e-4;%1.e-5;QALAS_synphan_MIcalc.m
       maxiter=400;
   
       % fn
       Fx = @(x) MI_GHQuad_HPTofts_With_Der_Parallel_old_method(x, M0, params, model, NumberUncertain, xn, wn, xn2, wn2, T1Pqp, T1Lqp, kplqp, klpqp, kveqp, t0qp);
   
+      %% debug
+      %% [myobjfun, myobjfun_Der]= Fx(InitialGuess)
       tic;
       [designopt,fval,exitflag,output,lambda,grad,hessian] ...
        =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
           optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
           maxiter,'Display','iter-detailed',... 
           'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }));
+        %optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',5.e-4,'Algorithm','sqp','StepTolerance',1.000000e-9,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg'));
       toc;
   
       % save convergence history
@@ -223,7 +212,7 @@ function driverHPMIoptadj(NGauss,NumberUncertain,SignalNoiseMI )
       xlabel('sec'); legend('Pyr','Lac')
       saveas(handle,sprintf('OptMxyNG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')
       handle = figure(11)
-      plot(params.TRList,params.FaList(1,:)*180/pi,'b',params.TRList,params.FaList(2,:)*180/pi,'k')
+      plot(params.TRList,optparams.FaList(1,:)*180/pi,'b',params.TRList,optparams.FaList(2,:)*180/pi,'k')
       ylabel('adj MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
       saveas(handle,sprintf('OptFANG%dNu%dadjSNR%02d',NGauss,NumberUncertain,SignalNoiseMI),'png')

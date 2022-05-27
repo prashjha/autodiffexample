@@ -1,5 +1,5 @@
 \documentclass[10pt]{amsart}
-\usepackage[left=.25in,right=.25in,top=.25in,bottom=.25in]{geometry}
+\usepackage[left=.15in,right=.15in,top=.15in,bottom=.15in]{geometry}
 \geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
 %\geometry{landscape}                % Activate for for rotated page geometry
 %\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
@@ -47,14 +47,15 @@
 
 \newcommand{\picdir}{./pdffig}
 \newcommand\viewdata[1]{
-\begin{figure}[h]
+\begin{figure}[H]
 \begin{tabular}{cccc} 
  \IfFileExists{history#1.png}{\includegraphics[width=0.24\textwidth]{{history#1}.png}}{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
 &\IfFileExists{OptMxy#1.png}{\includegraphics[width=0.24\textwidth]{{OptMxy#1}.png} }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
 &\IfFileExists{OptFA#1.png}{\includegraphics[width=0.24\textwidth]{{OptFA#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
 &\IfFileExists{OptMz#1.png}{\includegraphics[width=0.24\textwidth]{{OptMz#1}.png}  }{\fbox{\begin{picture}(10,10)\put(0,5){ not found } \end{picture}}}
 \end{tabular}           
-\caption{#1}\label{Fig:#1}
+\vspace{-15pt}
+\caption{NG=number gauss points. NU=number uncertain var. #1}\label{Fig:#1}
 \end{figure}
 }
 
@@ -78,30 +79,93 @@ Received: date / Accepted: date
 
 \begin{document}
 
-\setlength{\unitlength}{.15cm}
+\setlength{\unitlength}{.1cm}
+
+%\begin{figure}[H]
+%\begin{tabular}{cc} 
+% \includegraphics[width=0.24\textwidth]{solversummaryNP1.png} & 
+% \includegraphics[width=0.24\textwidth]{solversummaryNP3.png}
+% \\
+%(a) & (b)\\
+%\end{tabular}           
+%\caption{Inverse Solver Summary. (a) kpl inverse only (b)kpl, kve, t0 }\label{Fig:summary}
+%\end{figure}
 
 \viewdata{NG3Nu3adjSNR10}
 \viewdata{NG4Nu3adjSNR10}
 \viewdata{NG5Nu3adjSNR10}
+
+%historyNG3Nu3constDirectSNR02.png  OptFANG3Nu3constDirectSNR08.png   OptMxyNG3Nu3constDirectSNR12.png  OptMzNG3Nu3constDirectSNR20.png
+%historyNG3Nu3constDirectSNR05.png  OptFANG3Nu3constDirectSNR10.png   OptMxyNG3Nu3constDirectSNR15.png  OptMzNG3Nu3constDirectSNR22.png
+%historyNG3Nu3constDirectSNR08.png  OptFANG3Nu3constDirectSNR12.png   OptMxyNG3Nu3constDirectSNR20.png  poptNG3Nu3constDirectSNR02.mat
+%historyNG3Nu3constDirectSNR10.png  OptFANG3Nu3constDirectSNR15.png   OptMxyNG3Nu3constDirectSNR22.png  poptNG3Nu3constDirectSNR05.mat
+%historyNG3Nu3constDirectSNR12.png  OptFANG3Nu3constDirectSNR20.png   OptMzNG3Nu3constDirectSNR02.png   poptNG3Nu3constDirectSNR08.mat
+%historyNG3Nu3constDirectSNR15.png  OptFANG3Nu3constDirectSNR22.png   OptMzNG3Nu3constDirectSNR05.png   poptNG3Nu3constDirectSNR10.mat
+%historyNG3Nu3constDirectSNR20.png  OptMxyNG3Nu3constDirectSNR02.png  OptMzNG3Nu3constDirectSNR08.png   poptNG3Nu3constDirectSNR12.mat
+%historyNG3Nu3constDirectSNR22.png  OptMxyNG3Nu3constDirectSNR05.png  OptMzNG3Nu3constDirectSNR10.png   poptNG3Nu3constDirectSNR15.mat
+%OptFANG3Nu3constDirectSNR02.png    OptMxyNG3Nu3constDirectSNR08.png  OptMzNG3Nu3constDirectSNR12.png   poptNG3Nu3constDirectSNR20.mat
+%OptFANG3Nu3constDirectSNR05.png    OptMxyNG3Nu3constDirectSNR10.png  OptMzNG3Nu3constDirectSNR15.png   poptNG3Nu3constDirectSNR22.mat
+
 \clearpage
-\viewdata{NG3Nu3interior-pointSNR10}
-\viewdata{NG4Nu3interior-pointSNR10}
-\viewdata{NG5Nu3interior-pointSNR10}
+\viewdata{NG5Nu3constDirectTotalSignalSNR02Hermite}
+\viewdata{NG5Nu3constDirectTotalSignalSNR05Hermite}
+\viewdata{NG5Nu3constDirectTotalSignalSNR10Hermite}
+\viewdata{NG5Nu3constDirectTotalSignalSNR15Hermite}
+\viewdata{NG5Nu3constDirectTotalSignalSNR20Hermite}
+
 \clearpage
-\viewdata{NG3Nu3sqpSNR10}
-\viewdata{NG4Nu3sqpSNR10}
-\viewdata{NG5Nu3sqpSNR10}
+\viewdata{NG5Nu3constDirectSumQuadSNR02Hermite}
+\viewdata{NG5Nu3constDirectSumQuadSNR05Hermite}
+\viewdata{NG5Nu3constDirectSumQuadSNR10Hermite}
+\viewdata{NG5Nu3constDirectSumQuadSNR15Hermite}
+\viewdata{NG5Nu3constDirectSumQuadSNR20Hermite}
+
 \clearpage
-\viewdata{NG3Nu3adjSNR10}
-\viewdata{NG3Nu3interior-pointSNR10}
-\viewdata{NG3Nu3sqpSNR10}
+\viewdata{NG5Nu3interior-pointTotalSignalSNR02Hermite}
+\viewdata{NG5Nu3interior-pointTotalSignalSNR05Hermite}
+\viewdata{NG5Nu3interior-pointTotalSignalSNR10Hermite}
+\viewdata{NG5Nu3interior-pointTotalSignalSNR15Hermite}
+\viewdata{NG5Nu3interior-pointTotalSignalSNR20Hermite}
+
 \clearpage
-\viewdata{NG4Nu3adjSNR10}
-\viewdata{NG4Nu3interior-pointSNR10}
-\viewdata{NG4Nu3sqpSNR10}
+\viewdata{NG5Nu3interior-pointSumQuadSNR02Hermite}
+\viewdata{NG5Nu3interior-pointSumQuadSNR05Hermite}
+\viewdata{NG5Nu3interior-pointSumQuadSNR10Hermite}
+\viewdata{NG5Nu3interior-pointSumQuadSNR15Hermite}
+\viewdata{NG5Nu3interior-pointSumQuadSNR20Hermite}
+
+
+
+
 \clearpage
-\viewdata{NG5Nu3adjSNR10}
-\viewdata{NG5Nu3interior-pointSNR10}
-\viewdata{NG5Nu3sqpSNR10}
+\begin{figure}[H]
+ \includegraphics[width=0.74\textwidth]{globalboxplot.png}
+\caption{box plot}\label{Fig:boxsummary}
+\end{figure}
+
+
+
+\begin{figure}[h]
+\begin{tabular}{ccc} 
+ \includegraphics[width=0.3\textwidth]{solversummaryNP3control.png} & 
+ \includegraphics[width=0.3\textwidth]{solversummaryNP3paretoP3L28Max.png} &
+ \includegraphics[width=0.3\textwidth]{solversummaryNP3paretoP35L28Max.png}
+\end{tabular}           
+\caption{Solver Summary.}
+\end{figure}
+
+
+\begin{figure}[h]
+\begin{tabular}{ccc} 
+ \includegraphics[width=0.3\textwidth]{solversummaryNP3constMax.png} & 
+ \includegraphics[width=0.3\textwidth]{solversummaryNP3interior-pointTotalSignalLB.png} &
+ \includegraphics[width=0.3\textwidth]{solversummaryNP3interior-pointTotalSignalUB.png}
+\end{tabular}           
+\caption{Solver Summary.}
+\end{figure}
+
+
+
+
 
 \end{document}

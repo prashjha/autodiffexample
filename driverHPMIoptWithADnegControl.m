@@ -6,7 +6,7 @@
 clear all
 clc
 
-myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-9,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
+myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-4, 'OptimalityTolerance',1.5e-2,'Algorithm','interior-point','StepTolerance',1.000000e-06,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'HessianApproximation', 'lbfgs' ,'Diagnostic','on','FunValCheck','on' )
 driverHPMIopt(3,3, 2,myoptions)
 driverHPMIopt(3,3, 5,myoptions)
 driverHPMIopt(3,3, 8,myoptions)
@@ -25,10 +25,11 @@ driverHPMIopt(3,3,25,myoptions)
 %driverHPMIopt(4,3,20,myoptions)
 %driverHPMIopt(4,3,22,myoptions)
 %driverHPMIopt(4,3,25,myoptions)
+
 %driverHPMIopt(5,3,10,myoptions)
       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-6, 'OptimalityTolerance',2.5e-6,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg','HonorBounds',false, 'HessianApproximation', 'finite-difference' ,'Diagnostic','on','FunValCheck','on','BarrierParamUpdate','predictor-corrector' )
       %myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-7, 'OptimalityTolerance',1.e-16,'Algorithm','active-set','StepTolerance',1.000000e-16)
-myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',1.e-14, 'OptimalityTolerance',1.e-14,'Algorithm','sqp','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
+myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-4, 'OptimalityTolerance',1.5e-2,'Algorithm','sqp','StepTolerance',1.000000e-06,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'SubproblemAlgorithm','cg')
 driverHPMIopt(3,3, 2,myoptions)
 driverHPMIopt(3,3, 5,myoptions)
 driverHPMIopt(3,3, 8,myoptions)
@@ -177,8 +178,8 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       % noise calc max signal assuming total signal is sum of gaussian RV
       signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
       % variance for Gauss RV is sum. sqrt for std
-      signu = sqrt(2*Ntime) * signuImage;
-      [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signuImage);
+      signu = sqrt(2* Ntime) * signuImage;
+      [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
       lqp2=length(xn2{1}(:));
   
       switch (NumberUncertain)
@@ -264,18 +265,33 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       end
   
       disp('build objective function')
-      
+      % TODO - repmat does not work well with AD
+      % TODO - replace repmat with matrix
+      % sumstatevariable = squeeze(sum(repmat(sin(FaList)',1,1,lqp).*statevariable,1));
+      sumstatevariable = optimexpr([Nspecies,lqp]);
+      for jjj = 1:lqp
+         sumstatevariable(:,jjj) =  sum(sin(FaList)'.*statevariable(:,:,jjj),1)';
+      end 
+      %statematrix = optimexpr([lqp,lqp]);
+      %lqpchoosetwo = nchoosek(1:lqp,2);
+      %arraypermutationsjjj = repmat([1:lqp]',1,lqp) ;
+      %arraypermutationsiii = repmat([1:lqp] ,lqp,1) ;
+      %lqpchoosetwo = [arraypermutationsiii(:), arraypermutationsjjj(:)];
+      %diffsummone = sumstatevariable(1,lqpchoosetwo(:,1)) - sumstatevariable(1,lqpchoosetwo(:,2));
+      %diffsummtwo = sumstatevariable(2,lqpchoosetwo(:,1)) - sumstatevariable(2,lqpchoosetwo(:,2));
+      %diffsummone = repmat(sumstatevariable(1,:)',1,lqp) - repmat(sumstatevariable(1,:) ,lqp,1);
+      %diffsummtwo = repmat(sumstatevariable(2,:)',1,lqp) - repmat(sumstatevariable(2,:) ,lqp,1);
       expandvar  = ones(1,lqp);
+      diffsummone = sumstatevariable(1,:)' * expandvar   - expandvar' * sumstatevariable(1,:);
+      diffsummtwo = sumstatevariable(2,:)' * expandvar   - expandvar' * sumstatevariable(2,:);
+  
       Hz = 0;
       for jjj=1:lqp2
         znu=xn2{1}(jjj) ;
-        for kkk  =1:Ntime 
-           diffsummone = (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:)))  * expandvar   - expandvar' * (sin(FaList(1,kkk))*squeeze(statevariable(kkk,1,:))') ;
-           diffsummtwo = (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:)))  * expandvar   - expandvar' * (sin(FaList(2,kkk))*squeeze(statevariable(kkk,2,:))') ;
-           Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signuImage^2   - (znu + diffsummtwo).^2/2/signuImage^2  ) * wn(:)));
-        end
+        %Hz = Hz + wn2(jjj) * (wn(lqpchoosetwo(:,1))' * log(exp(-(znu + diffsummone').^2/sqrt(2)/signu   - (znu + diffsummtwo').^2/sqrt(2)/signu  ).* wn(lqpchoosetwo(:,2))));
+        Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsummone).^2/2/signu^2   - (znu + diffsummtwo).^2/2/signu^2  ) * wn(:)));
       end
-      MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
+      MIGaussObj = - Hz/sqrt(pi)^(NumberUncertain+1); 
   
       
       %% 
@@ -301,22 +317,22 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       toc;
       % save convergence history
       handle = figure(5)
-      saveas(handle,sprintf('historyNG%dNu%dsum%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR ),'png')
+      saveas(handle,sprintf('historyNG%dNu%dneg%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR ),'png')
       % save solution
       optparams = params;
       optparams.FaList = popt.FaList;
       [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',optparams);
-      save(sprintf('poptNG%dNu%dsum%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
+      save(sprintf('poptNG%dNu%dneg%sSNR%02d.mat',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR) ,'popt','params','Mxy','Mz','Mxyopt','Mzopt','signu','signuImage')
       handle = figure(10)
       plot(params.TRList,Mxyopt(1,:),'b',params.TRList,Mxyopt(2,:),'k')
       ylabel('MI Mxy')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMxyNG%dNu%dsum%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptMxyNG%dNu%dneg%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
       handle = figure(11)
       plot(params.TRList,popt.FaList(1,:)*180/pi,'b',params.TRList,popt.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptFANG%dNu%dsum%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptFANG%dNu%dneg%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
       handle = figure(12)
       plot(params.TRList,Mzopt(1,:),'b--',params.TRList,Mzopt(2,:),'k--')
       hold
@@ -328,7 +344,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions)
       end
       ylabel('MI Mz ')
       xlabel('sec'); legend('Pyr','Lac')
-      saveas(handle,sprintf('OptMzNG%dNu%dsum%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
+      saveas(handle,sprintf('OptMzNG%dNu%dneg%sSNR%02d',NGauss,NumberUncertain,myoptions.Algorithm,modelSNR),'png')
   end 
 
 

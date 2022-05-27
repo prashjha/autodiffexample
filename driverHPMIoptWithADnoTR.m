@@ -42,7 +42,7 @@ kvemean = [ 0.15 ];       % s
 kvestdd = [ .05  ];       % s
 t0mean  = [ 4    ];       % s
 t0sttd  = [ 1    ] ;       % s
-tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd,t0mean,t0sttd];
+tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd];
 
 %% Get true Mz
 %% Choose Excitation Angle
@@ -128,14 +128,15 @@ if optf
     Nspecies = 2
     FaList = optimvar('FaList',2,Ntime);
     TRList = TR_list;
-    diffTR = diff(TRList);
-    NGauss  = 2
+    NGauss  = 3
     [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     lqp=length(xn{1}(:));
     statevariable    = optimvar('state',Ntime,Nspecies,lqp);
     stateconstraint  = optimconstr(    [Ntime,Nspecies,lqp]);
 
-    signu = 10 ; % TODO - FIXME
+    modelSNR = 10 ; % TODO - FIXME
+    signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
+    signu = Ntime * signuImage;
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
@@ -232,7 +233,7 @@ if optf
     
     x0.FaList = params.FaList;
     x0.state  = zeros(Nspecies,Ntime,lqp);
-    myoptions = optimoptions(@fminunc,'Display','iter-detailed','SpecifyObjectiveGradient',true)
+    myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' })
     [popt,fval,exitflag,output] = solve(convprob,x0,'Options',myoptions, 'ObjectiveDerivative', 'auto-reverse' )
     %[popt,fval,exitflag,output] = solve(convprob,x0 )
 
