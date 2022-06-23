@@ -440,6 +440,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
       plot(params.TRList,popt.FaList(1,:)*180/pi,'b',params.TRList,popt.FaList(2,:)*180/pi,'k')
       ylabel('MI FA (deg)')
       xlabel('sec'); legend('Pyr','Lac')
+      ylim([0 40])
       set(gca,'FontSize',16)
       saveas(handle,sprintf('OptFANG%dNu%d%s%sSNR%02d%s',NGauss,NumberUncertain,myoptions.Algorithm,ObjectiveType,modelSNR,QuadratureRule),'png')
       handle = figure(12)
