@@ -403,7 +403,7 @@ myupperb(5,2) = .20;
 myupperb(6,2) = .20;
 myplottitle = { solnList(0*length(snrList)+1).plotlabel solnList(1*length(snrList)+1).plotlabel solnList(2*length(snrList)+1).plotlabel solnList(3*length(snrList)+1).plotlabel solnList(4*length(snrList)+1).plotlabel solnList(5*length(snrList)+1).plotlabel } 
 myplotlabel = { "" "" "" "" "" "" } 
-myplottitle(1) = cellstr("clinic")
+myplottitle(1) = cellstr("\theta_P=20deg, \theta_L=30deg ")
 myplottitle(3) = cellstr("constant")
 myplottitle(4) = cellstr("constant")
 myplottitle(5) = cellstr("varying")
