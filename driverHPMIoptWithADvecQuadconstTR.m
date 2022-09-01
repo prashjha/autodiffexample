@@ -38,6 +38,8 @@ NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'TotalSignal', GaussLe
 
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType,GaussLegendre
   close all
+  %% constant
+  lnsr2pi = 0.9189385332046727; % log(sqrt(2*pi))
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
   T1pstdd = [ 10 ]; % s
@@ -137,12 +139,13 @@ NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'TotalSignal', GaussLe
       jmalpha = alphamean(1);
       jmbeta  = betamean(1);
       jmt0    = t0mean(1);
-      jmaif   = jmA0  * gampdfad(TR_list + jmt0  , jmalpha , jmbeta);
-      lnsr2pi = 0.9189385332046727; % log(sqrt(2*pi))
+      jmaif   = jmA0  * gampdfad(TR_list - jmt0  , jmalpha , jmbeta);
+      % remove error handling on gampdf to obtain functional form for AD
       ai3 = jmalpha -1;
-      %jmaifad = jmA0  * fgamad( (TR_list+jmt0)/jmbeta ,jmalpha -1) ./ jmbeta;
-      zzz = (TR_list+jmt0)/jmbeta;
-      jmaifad = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+      zzz = (TR_list-jmt0)/jmbeta;
+      jmaifad = zeros(size(TR_list));
+      nonzeroidx  = find(zzz >0);
+      jmaifad(nonzeroidx  ) = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz(nonzeroidx  ))+zzz(nonzeroidx  )-ai3) ) ./ jmbeta;
       figure(4)
       plot(TR_list,jmaif ,'b', TR_list,jmaifad ,'r')
       ylabel('aif')
@@ -270,9 +273,19 @@ NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'TotalSignal', GaussLe
           % setup AIF
           %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
           integratedt = TRList(iii)+ [1:2:2*nsubstep]*deltat/2;
-          integrand = jmA0 * gampdfad(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
+          ai3 = jmalpha -1;
+          integrand = zeros(size(repmat(t0qp,1,nsubstep)));
+          zzz = (repmat(integratedt(1:nsubstep )',1,lqp)'+ repmat(t0qp,1,nsubstep))/jmbeta;
+          integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+          % TODO need left shift
+          %nonzeroidx  =evaluate( zzz)>=0;
+          %integrand(nonzeroidx  ) = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz(nonzeroidx  ))+zzz(nonzeroidx  )-ai3) ) ./ jmbeta;
+          %zzz = max(0,(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep))/jmbeta);
+          %integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+          %integrand = jmA0 * gampdfad(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
           aiftermpyr = deltat * repmat(kveqp/ve,1,nsubstep).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii))) .* integrand ; 
-          aiftermlac = deltat * repmat(kveqp/ve,1,nsubstep).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
+          aiftermlac = deltat * repmat(kveqp/ve,1,nsubstep).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii))))   ).* integrand ; 
+          %aiftermlac = deltat * repmat(kveqp/ve,1,nsubstep).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
   
           % setup state as linear constraint
           auxvariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( auxvariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
