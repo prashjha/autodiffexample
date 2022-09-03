@@ -25,6 +25,7 @@ betasttd  =  [.3];
 tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd;t0mean;t0sttd;alphamean; alphasttd; betamean ; betasttd ];
 
 %% Variable Setup
+lnsr2pi = 0.9189385332046727; % log(sqrt(2*pi))
 Ntime = 30;
 TR = 3;
 TR_list = (0:(Ntime-1))*TR;
@@ -89,9 +90,14 @@ if plotinit
     jmalpha = alphamean(1);
     jmbeta  = betamean(1);
     jmt0    = t0mean(1);
-    jmaif   = jmA0  * gampdf(TR_list - jmt0  , jmalpha , jmbeta);
+    jmaif   = jmA0  * gampdf(TR_list + jmt0  , jmalpha , jmbeta);
+    ai3 = jmalpha -1;
+    zzz = (TR_list+jmt0)/jmbeta;
+    jmaifad = zeros(size(TR_list));
+    nonzeroidx  = find(zzz >0);
+    jmaifad(nonzeroidx  ) = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz(nonzeroidx  ))+zzz(nonzeroidx  )-ai3) ) ./ jmbeta;
     figure(4)
-    plot(TR_list,jmaif ,'b')
+    plot(TR_list,jmaif ,'b', TR_list,jmaifad ,'r')
     ylabel('aif')
     xlabel('sec')
 end
@@ -111,7 +117,7 @@ if optf
     % setup optimization variables
     Nspecies = 2
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
-    TRList = TR_list;
+    TRList = optimvar('TR',1,size(TR_list,2),'LowerBound',0, 'UpperBound',10);%TR_list;
     NGauss  = 3
     NumberUncertain=3;
     switch (NumberUncertain)
@@ -159,8 +165,10 @@ if optf
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
         % setup AIF
-        integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
-        integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
+        integratedt = TRList(iii)+ [1:2:2*nsubstep]*deltat/2;
+        ai3 = jmalpha -1;
+        zzz = (integratedt(1:nsubstep )'+t0qp)/jmbeta;
+        integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )
         % 
@@ -229,9 +237,9 @@ if optf
     
 
     % truthconstraint = infeasibility(stateconstraint,x0);
-    InitialGuess =  [flips(:)];   
-    pmin =  [flips(:)*0];     
-    pmax =  [flips(:)*0+35*pi/180];
+    InitialGuess =  [flips(:);TR_list'];   
+    pmin =  [flips(:)*0;zeros(size(TR_list'))  ];     
+    pmax =  [flips(:)*0+35*pi/180;10*ones(size(TR_list')) ];
     tolx=1.e-9;
     tolfun=5.e-4;
     maxiter=400;
@@ -273,15 +281,18 @@ end
 
 
 function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
-    x0.FaList = reshape(xopt,Nspecies,Ntime);
+    x0.FaList = reshape(xopt(myidx.FaList),Nspecies,Ntime);
+    x0.TR     = xopt(myidx.TR);
     x0.state  = evaluate(auxvariable ,x0);
-    Xfull = [ x0.FaList(:); x0.state(:)];
+    Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
     [MIobjfun,initVals.g] = problem.objective(Xfull);
     [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
     objectiveGradFA    = initVals.g(myidx.FaList);
+    objectiveGradTR    = initVals.g(myidx.TR);
     objectiveGradState = initVals.g(myidx.state);
     jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
+    jacobianTR    = initConst.ceqGrad(myidx.TR,:);
     jacobianState = initConst.ceqGrad(myidx.state,:);
     adjointvar =-jacobianState \objectiveGradState ;
-    MIobjfun_Der = objectiveGradFA +  jacobianFA *   adjointvar ;
+    MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
 end
