@@ -109,15 +109,16 @@ if optf
     tic;
     % Convert this function file to an optimization expression.
     
-    %% 
     % Furthermore, you can also convert the |rosenbrock| function handle, which 
     % was defined at the beginning of the plotting routine, into an optimization expression.
-    
 
     % setup optimization variables
     Nspecies = 2
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
-    TRList = optimvar('TR',1,size(TR_list,2),'LowerBound',0, 'UpperBound',10);%TR_list;
+    %TRList = optimvar('TR',Ntime-1,1,'LowerBound',0, 'UpperBound',5);%TR_list;
+    TRList = optimvar('TR','LowerBound',0, 'UpperBound',5);%TR_list;
+    % [0;cumsum( TR* ones(Ntime-1,1))]
+
     NGauss  = 3
     NumberUncertain=3;
     switch (NumberUncertain)
@@ -138,37 +139,39 @@ if optf
     [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,0,signu);
     lqp2=length(xn2{1}(:));
 
-
     disp('build state variable')
     stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
     auxvariable(:,1,:) =0;
+    TimeList = (0:(Ntime-1))*TRList ;
     for iqp = 1:lqp
+      switch (NumberUncertain)
+         case(3)
+           T1Pqp   = T1pmean;
+           T1Lqp   = T1lmean;
+           kplqp   = xn{1}(iqp);
+           klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+           kveqp   = xn{2}(iqp);
+           t0qp    = xn{3}(iqp); 
+         case(4)
+           T1Pqp   = xn{1}(iqp);
+           T1Lqp   = xn{2}(iqp);
+           kplqp   = xn{3}(iqp);
+           klpqp   =    0 ;     % @cmwalker where do I get this from ? 
+           kveqp   = xn{4}(iqp);
+           t0qp    = t0mean(1); 
+      end 
+      % setup AIF
+      %integratedt = TRList(iii)+ [1:2:2*nsubstep]*deltat/2;
+      ai3 = jmalpha -1;
+      zzz = (TimeList +t0qp)/jmbeta;
+      integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+
+      % loop over time
       for iii = 1:Ntime-1
-        switch (NumberUncertain)
-           case(3)
-             T1Pqp   = T1pmean;
-             T1Lqp   = T1lmean;
-             kplqp   = xn{1}(iqp);
-             klpqp   =    0 ;     % @cmwalker where do I get this from ? 
-             kveqp   = xn{2}(iqp);
-             t0qp    = xn{3}(iqp); 
-           case(4)
-             T1Pqp   = xn{1}(iqp);
-             T1Lqp   = xn{2}(iqp);
-             kplqp   = xn{3}(iqp);
-             klpqp   =    0 ;     % @cmwalker where do I get this from ? 
-             kveqp   = xn{4}(iqp);
-             t0qp    = t0mean(1); 
-        end 
-        %
-        currentTR = TR ;
-        nsubstep = 5;
-        deltat = currentTR /nsubstep ;
-        % setup AIF
-        integratedt = TRList(iii)+ [1:2:2*nsubstep]*deltat/2;
-        ai3 = jmalpha -1;
-        zzz = (integratedt(1:nsubstep )'+t0qp)/jmbeta;
-        integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+        %currentTR = TRList(iii) ;
+        currentTR = TRList ;
+        %nsubstep = 5;
+        %deltat = currentTR /nsubstep ;
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )
         % 
@@ -187,16 +190,31 @@ if optf
         % [(kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-currentTR/T1L)]
         %    
         % linear approximation of aif    
-        % >> syms tk tkm1 tau a gammak gammakm1
-        % >> 
-        % >> aifexpr = exp(a*(tk-tau)) *  (gammak * (tau - tkm1)/(tk-tkm1 ) + gammakm1 * (tk - tau )/(tk-tkm1 ) )  
+        % >> syms tk tkm1 tau a gammak gammakm1 kplqp d  T1Pqp kveqp T1Lqp 
+        % >> aifexpr = exp([a,  0; kplqp, d ] *(tk-tau)) * [gammak * (tau - tkm1)/(tk-tkm1 ) + gammakm1 * (tk - tau )/(tk-tkm1 ) ;0]
+        % 
+        % aifexpr =
+        % 
+        %     -exp(-a*(tau - tk))*((gammakm1*(tau - tk))/(tk - tkm1) - (gammak*(tau - tkm1))/(tk - tkm1))
+        % -exp(-kplqp*(tau - tk))*((gammakm1*(tau - tk))/(tk - tkm1) - (gammak*(tau - tkm1))/(tk - tkm1))
+        % 
         % >> aifint = int(aifexpr,tau,tkm1,tk)
-        % aifint = -(gammak - gammakm1 - gammak*exp(a*tk - a*tkm1) + gammakm1*exp(a*tk - a*tkm1) + a*gammak*tk - a*gammak*tkm1 - a*gammakm1*tk*exp(a*tk - a*tkm1) + a*gammakm1*tkm1*exp(a*tk - a*tkm1))/(a^2*(tk - tkm1))
+        % >> a = -1/T1Pqp - kplqp - kveqp
+        % >> d = -1/T1Lqp
+        % >> eval(aifint )
+        % 
+        % ans =
+        % 
+        % -(gammak - gammakm1 - gammak*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp)) + gammakm1*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp)) - gammak*tk*(kplqp + kveqp + 1/T1Pqp) + gammak*tkm1*(kplqp + kveqp + 1/T1Pqp) + gammakm1*tk*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp) - gammakm1*tkm1*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp))/((tk - tkm1)*(kplqp + kveqp + 1/T1Pqp)^2)
+        %  -(gammak - gammakm1 - gammak*exp(kplqp*tk - kplqp*tkm1) + gammakm1*exp(kplqp*tk - kplqp*tkm1) + gammak*kplqp*tk - gammak*kplqp*tkm1 - gammakm1*kplqp*tk*exp(kplqp*tk - kplqp*tkm1) + gammakm1*kplqp*tkm1*exp(kplqp*tk - kplqp*tkm1))/(kplqp^2*(tk - tkm1))
+        % 
+        % 
+        % mid-point rule integration
+        %aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ); kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand ;
+        % symbolic integration
+        aifterm =  [-(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) + integrand(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) - integrand(iii+1)*TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii+1)*TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii)*TimeList(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp) - integrand(iii)*TimeList(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp))/((TimeList(iii+1) - TimeList(iii))*(kplqp + kveqp + 1/T1Pqp)^2) ; -(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii+1)*kplqp*TimeList(iii+1) - integrand(iii+1)*kplqp*TimeList(iii) - integrand(iii)*kplqp*TimeList(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*kplqp*TimeList(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)))/(kplqp^2*(TimeList(iii+1) - TimeList(iii)))];
 
         expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
-        % mid-point rule integration
-        aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] );
-    kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand ;
         auxvariable(:,iii+1,iqp) =  expATR *(cos(FaList(:,iii)).*auxvariable(:,iii,iqp ))   + aifterm ;
         stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii)).*statevariable(:,iii,iqp ))   + aifterm ;
       end
@@ -237,9 +255,12 @@ if optf
     
 
     % truthconstraint = infeasibility(stateconstraint,x0);
-    InitialGuess =  [flips(:);TR_list'];   
-    pmin =  [flips(:)*0;zeros(size(TR_list'))  ];     
-    pmax =  [flips(:)*0+35*pi/180;10*ones(size(TR_list')) ];
+    %InitialGuess =  [flips(:);TR* ones(Ntime-1,1) ];   
+    %pmin =  [flips(:)*0;zeros(Ntime-1,1)   ];     
+    %pmax =  [flips(:)*0+35*pi/180;5*ones(Ntime-1,1) ];
+    InitialGuess =  [flips(:);TR ];   
+    pmin =  [flips(:)*0;0 ];     
+    pmax =  [flips(:)*0+35*pi/180;5 ];
     tolx=1.e-9;
     tolfun=5.e-4;
     maxiter=400;
@@ -256,14 +277,14 @@ if optf
     [designopt,fval,exitflag,output,lambda,grad,hessian] ...
      =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
         optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
-        maxiter,'Display','iter-detailed',... 
+        maxiter,'Display','iter-detailed','Hessian',{'lbfgs',1},... 
         'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }) ...
         );
 
     toc;
     handle = figure(5)
     optparams = params;
-    optparams.FaList = reshape(designopt(:),size(params.FaList ));
+    optparams.FaList = reshape(designopt(myidx.FaList),size(params.FaList ));
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
     figure(6)
     plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
