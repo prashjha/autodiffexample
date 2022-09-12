@@ -116,7 +116,8 @@ if optf
     Nspecies = 2
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
     %TRList = optimvar('TR',Ntime-1,1,'LowerBound',0, 'UpperBound',5);%TR_list;
-    TRList = optimvar('TR','LowerBound',0, 'UpperBound',5);%TR_list;
+    %TRList = optimvar('TR','LowerBound',0, 'UpperBound',5);%TR_list;
+    TRList = TR;
     % [0;cumsum( TR* ones(Ntime-1,1))]
 
     NGauss  = 3
@@ -161,17 +162,24 @@ if optf
            t0qp    = t0mean(1); 
       end 
       % setup AIF
-      %integratedt = TRList(iii)+ [1:2:2*nsubstep]*deltat/2;
-      ai3 = jmalpha -1;
-      zzz = (TimeList +t0qp)/jmbeta;
-      integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+      %ai3 = jmalpha -1;
+      %zzz = (TimeList +t0qp)/jmbeta;
+      %integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
 
       % loop over time
       for iii = 1:Ntime-1
         %currentTR = TRList(iii) ;
         currentTR = TRList ;
-        %nsubstep = 5;
-        %deltat = currentTR /nsubstep ;
+        nsubstep = 5;
+        deltat = currentTR /nsubstep ;
+        % setup AIF
+        %integratedt = [TimeList(iii):deltat:TimeList(iii+1)] +deltat/2  ;
+        integratedt = TimeList(iii)+ [1:2:2*nsubstep]*deltat/2;
+        ai3 = jmalpha -1;
+        zzz = (integratedt +t0qp)/jmbeta;
+        integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+        %integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
+
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )
         % 
@@ -210,9 +218,9 @@ if optf
         % 
         % 
         % mid-point rule integration
-        %aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ); kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand ;
+        aifterm = kveqp * deltat * [ exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ); kplqp*(-exp((-1/T1Pqp - kplqp - kveqp)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp - 1/T1Lqp )] * integrand' ;
         % symbolic integration
-        aifterm =  [-(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) + integrand(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) - integrand(iii+1)*TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii+1)*TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii)*TimeList(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp) - integrand(iii)*TimeList(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp))/((TimeList(iii+1) - TimeList(iii))*(kplqp + kveqp + 1/T1Pqp)^2) ; -(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii+1)*kplqp*TimeList(iii+1) - integrand(iii+1)*kplqp*TimeList(iii) - integrand(iii)*kplqp*TimeList(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*kplqp*TimeList(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)))/(kplqp^2*(TimeList(iii+1) - TimeList(iii)))];
+        %aifterm =  [-(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) + integrand(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) - integrand(iii+1)*TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii+1)*TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii)*TimeList(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp) - integrand(iii)*TimeList(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp))/((TimeList(iii+1) - TimeList(iii))*(kplqp + kveqp + 1/T1Pqp)^2) ; -(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii+1)*kplqp*TimeList(iii+1) - integrand(iii+1)*kplqp*TimeList(iii) - integrand(iii)*kplqp*TimeList(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*kplqp*TimeList(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)))/(kplqp^2*(TimeList(iii+1) - TimeList(iii)))];
 
         expATR = [ exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp + 1/T1Pqp)))/(kplqp + kveqp - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
         auxvariable(:,iii+1,iqp) =  expATR *(cos(FaList(:,iii)).*auxvariable(:,iii,iqp ))   + aifterm ;
@@ -258,9 +266,12 @@ if optf
     %InitialGuess =  [flips(:);TR* ones(Ntime-1,1) ];   
     %pmin =  [flips(:)*0;zeros(Ntime-1,1)   ];     
     %pmax =  [flips(:)*0+35*pi/180;5*ones(Ntime-1,1) ];
-    InitialGuess =  [flips(:);TR ];   
-    pmin =  [flips(:)*0;0 ];     
-    pmax =  [flips(:)*0+35*pi/180;5 ];
+    %InitialGuess =  [flips(:);TR ];   
+    %pmin =  [flips(:)*0;0 ];     
+    %pmax =  [flips(:)*0+35*pi/180;5 ];
+    InitialGuess =  [flips(:) ];   
+    pmin =  [flips(:)*0 ];     
+    pmax =  [flips(:)*0+35*pi/180 ];
     tolx=1.e-9;
     tolfun=5.e-4;
     maxiter=400;
@@ -303,17 +314,19 @@ end
 
 function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
     x0.FaList = reshape(xopt(myidx.FaList),Nspecies,Ntime);
-    x0.TR     = xopt(myidx.TR);
+    %x0.TR     = xopt(myidx.TR);
     x0.state  = evaluate(auxvariable ,x0);
-    Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
+    %Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
+    Xfull = [ x0.FaList(:); x0.state(:)];
     [MIobjfun,initVals.g] = problem.objective(Xfull);
     [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
     objectiveGradFA    = initVals.g(myidx.FaList);
-    objectiveGradTR    = initVals.g(myidx.TR);
+    %objectiveGradTR    = initVals.g(myidx.TR);
     objectiveGradState = initVals.g(myidx.state);
     jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
-    jacobianTR    = initConst.ceqGrad(myidx.TR,:);
+    %jacobianTR    = initConst.ceqGrad(myidx.TR,:);
     jacobianState = initConst.ceqGrad(myidx.state,:);
     adjointvar =-jacobianState \objectiveGradState ;
-    MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
+    MIobjfun_Der = [objectiveGradFA] +  [jacobianFA] *   adjointvar ;
+    %MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
 end
