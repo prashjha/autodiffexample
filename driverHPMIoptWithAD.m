@@ -133,7 +133,7 @@ if optf
     auxvariable      = optimexpr(    [Nspecies,Ntime,lqp]);
     stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
 
-    modelSNR = 10 ; % TODO - FIXME
+    modelSNR = 20 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
     % variance for Gauss RV is sum. sqrt for std
     signu = sqrt(2* Ntime) * signuImage;
@@ -144,6 +144,7 @@ if optf
     stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
     auxvariable(:,1,:) =0;
     TimeList = (0:(Ntime-1))*TRList ;
+    %TimeList = [0;cumsum( TRList)]
     for iqp = 1:lqp
       switch (NumberUncertain)
          case(3)
@@ -162,9 +163,9 @@ if optf
            t0qp    = t0mean(1); 
       end 
       % setup AIF
-      %ai3 = jmalpha -1;
-      %zzz = (TimeList +t0qp)/jmbeta;
-      %integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+      % ai3 = jmalpha -1;
+      % zzz = (TimeList +t0qp)/jmbeta;
+      % integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
 
       % loop over time
       for iii = 1:Ntime-1
@@ -173,11 +174,11 @@ if optf
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
         % setup AIF
-        %integratedt = [TimeList(iii):deltat:TimeList(iii+1)] +deltat/2  ;
         integratedt = TimeList(iii)+ [1:2:2*nsubstep]*deltat/2;
         ai3 = jmalpha -1;
         zzz = (integratedt +t0qp)/jmbeta;
         integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+
         %integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
 
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
@@ -209,12 +210,13 @@ if optf
         % >> aifint = int(aifexpr,tau,tkm1,tk)
         % >> a = -1/T1Pqp - kplqp - kveqp
         % >> d = -1/T1Lqp
-        % >> eval(aifint )
+        % >> simplify(eval(aifint ))
         % 
         % ans =
         % 
         % -(gammak - gammakm1 - gammak*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp)) + gammakm1*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp)) - gammak*tk*(kplqp + kveqp + 1/T1Pqp) + gammak*tkm1*(kplqp + kveqp + 1/T1Pqp) + gammakm1*tk*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp) - gammakm1*tkm1*exp(tkm1*(kplqp + kveqp + 1/T1Pqp) - tk*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp))/((tk - tkm1)*(kplqp + kveqp + 1/T1Pqp)^2)
-        %  -(gammak - gammakm1 - gammak*exp(kplqp*tk - kplqp*tkm1) + gammakm1*exp(kplqp*tk - kplqp*tkm1) + gammak*kplqp*tk - gammak*kplqp*tkm1 - gammakm1*kplqp*tk*exp(kplqp*tk - kplqp*tkm1) + gammakm1*kplqp*tkm1*exp(kplqp*tk - kplqp*tkm1))/(kplqp^2*(tk - tkm1))
+        % -(gammak - gammakm1 - gammak*exp(kplqp*(tk - tkm1)) + gammakm1*exp(kplqp*(tk - tkm1)) + gammak*kplqp*tk - gammak*kplqp*tkm1 - gammakm1*kplqp*tk*exp(kplqp*(tk - tkm1)) + gammakm1*kplqp*tkm1*exp(kplqp*(tk - tkm1)))/(kplqp^2*(tk - tkm1))
+
         % 
         % 
         % mid-point rule integration
@@ -285,10 +287,11 @@ if optf
     %% [MIobjfun,initVals.g] = problem.objective(Xfull);
     %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
     %% [myobjfun, myobjfun_Der]= Fx(InitialGuess)
+        %%maxiter,'Display','iter-detailed','Hessian',{'lbfgs',1}, 'HessMult',@myHessMultFcn,...
     [designopt,fval,exitflag,output,lambda,grad,hessian] ...
      =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
         optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
-        maxiter,'Display','iter-detailed','Hessian',{'lbfgs',1},... 
+        maxiter,'Display','iter-detailed','Hessian',{'lbfgs',1}, ...
         'GradObj','on','PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' }) ...
         );
 
@@ -310,6 +313,11 @@ if optf
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
 end 
+
+% SD
+function W = myHessMultFcn(x,lambda,v)
+   W = v;
+end
 
 
 function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
