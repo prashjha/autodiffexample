@@ -6,38 +6,40 @@
 clear all
 clc
 
-mynewoptions.Algorithm = 'constDirect'
-driverHPMIopt(5,3, 2,mynewoptions,'SumQuad',false)
-driverHPMIopt(5,3, 5,mynewoptions,'SumQuad',false)
-driverHPMIopt(5,3,10,mynewoptions,'SumQuad',false)
-driverHPMIopt(5,3,15,mynewoptions,'SumQuad',false)
-driverHPMIopt(5,3,20,mynewoptions,'SumQuad',false)
-driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3,15,mynewoptions,'TotalSignal',false)
-driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
+%% mynewoptions.Algorithm = 'constDirect'
+%% driverHPMIopt(5,3, 2,mynewoptions,'SumQuad',false)
+%% driverHPMIopt(5,3, 5,mynewoptions,'SumQuad',false)
+%% driverHPMIopt(5,3,10,mynewoptions,'SumQuad',false)
+%% driverHPMIopt(5,3,15,mynewoptions,'SumQuad',false)
+%% driverHPMIopt(5,3,20,mynewoptions,'SumQuad',false)
+%% driverHPMIopt(5,3, 2,mynewoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3, 5,mynewoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3,10,mynewoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3,15,mynewoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3,20,mynewoptions,'TotalSignal',false)
 %
 myoptions = optimoptions(@fmincon,'Display','iter-detailed','SpecifyObjectiveGradient',true,'SpecifyConstraintGradient',true,'MaxFunctionEvaluations',1e7,'ConstraintTolerance',2.e-9, 'OptimalityTolerance',2.5e-4,'Algorithm','interior-point','StepTolerance',1.000000e-12,'MaxIterations',1000,'PlotFcn',{'optimplotfvalconstr', 'optimplotconstrviolation', 'optimplotfirstorderopt' },'HonorBounds',true, 'Diagnostic','on','FunValCheck','on' )
-%%driverHPMIopt(3,3,20,myoptions,'TotalSignal',false)
-driverHPMIopt(5,3, 2,myoptions,'TotalSignal',false)
-driverHPMIopt(5,3, 5,myoptions,'TotalSignal',false)
-driverHPMIopt(5,3,10,myoptions,'TotalSignal',false)
-driverHPMIopt(5,3,15,myoptions,'TotalSignal',false)
-driverHPMIopt(5,3,20,myoptions,'TotalSignal',false)
-driverHPMIopt(5,3, 2,myoptions,'SumQuad',false)
-driverHPMIopt(5,3, 5,myoptions,'SumQuad',false)
-driverHPMIopt(5,3,10,myoptions,'SumQuad',false)
-driverHPMIopt(5,3,15,myoptions,'SumQuad',false)
-driverHPMIopt(5,3,20,myoptions,'SumQuad',false)
+%% driverHPMIopt(5,3, 2,myoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3, 5,myoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3,10,myoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3,15,myoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3,20,myoptions,'TotalSignal',false)
+%% driverHPMIopt(5,3, 2,myoptions,'SumQuad',false)
+%% driverHPMIopt(5,3, 5,myoptions,'SumQuad',false)
+%% driverHPMIopt(5,3,10,myoptions,'SumQuad',false)
+%% driverHPMIopt(5,3,15,myoptions,'SumQuad',false)
+%% driverHPMIopt(5,3,20,myoptions,'SumQuad',false)
 
 %% % monitor memory: while [ -e /proc/3291925 ] ; do  top -b -n 1 -p 3291925 >>process.txt ;sleep 60; done  
 
-function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,GaussLegendre )
-  %NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'SumQuad'
+%%driverHPMIopt(5,3,10,myoptions,'TotalSignal',false)
+%% function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,GaussLegendre )
+NGauss = 3,NumberUncertain=3,modelSNR=10, ObjectiveType = 'TotalSignal', GaussLegendre =false
 
   NGauss,NumberUncertain,modelSNR,myoptions.Algorithm,ObjectiveType,GaussLegendre
   close all
+  %% constant
+  lnsr2pi = 0.9189385332046727; % log(sqrt(2*pi))
   %% Tissue Parameters
   T1pmean = [ 30 ]; % s
   T1pstdd = [ 10 ]; % s
@@ -137,9 +139,15 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
       jmalpha = alphamean(1);
       jmbeta  = betamean(1);
       jmt0    = t0mean(1);
-      jmaif   = jmA0  * gampdf(TR_list - jmt0  , jmalpha , jmbeta);
+      jmaif   = jmA0  * gampdfad(TR_list - jmt0  , jmalpha , jmbeta);
+      % remove error handling on gampdf to obtain functional form for AD
+      ai3 = jmalpha -1;
+      zzz = (TR_list-jmt0)/jmbeta;
+      jmaifad = zeros(size(TR_list));
+      nonzeroidx  = find(zzz >0);
+      jmaifad(nonzeroidx  ) = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz(nonzeroidx  ))+zzz(nonzeroidx  )-ai3) ) ./ jmbeta;
       figure(4)
-      plot(TR_list,jmaif ,'b')
+      plot(TR_list,jmaif ,'b', TR_list,jmaifad ,'r')
       ylabel('aif')
       xlabel('sec')
   end
@@ -153,7 +161,9 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
       % setup optimization variables
       Nspecies = 2
       FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
-      TRList = TR_list;
+      TRList = optimvar('TR',1,size(TR_list,2),'LowerBound',0, 'UpperBound',10);%TR_list;
+
+      %TRList = optimvar('TR','LowerBound',0, 'UpperBound',10.);TR_list;
       diffTR = diff(TRList);
   
       % noise calc for signal sum - assume same noise in pyruvate and lactate image
@@ -226,14 +236,18 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   
       disp('build state variable')
       
-      % >> syms a  kpl d currentTR    T1P kveqp T1L 
-      % >> expATR = expm([a,  0; kpl, d ] * currentTR )
+      % >> syms a  kpl d currentTR    T1P kveqp T1L  c d tk tkm1 tau
+      % >> expATR = expm([a,  0; kpl, d ] * currentTR ) 
       % 
       % expATR =
       % 
       % [                                     exp(a*currentTR),                0]
       % [(kpl*exp(a*currentTR) - kpl*exp(currentTR*d))/(a - d), exp(currentTR*d)]
       % 
+      % >> expAtktauctaud = expm([a * (tk-tau),  0; kpl* (tk-tau), d* (tk-tau) ] ) * (c*tau +d)
+      % >> int(expAtktauctaud , tau,tkm1,tk)
+      % [                                                                                                                                                (d*(exp(a*(tk - tkm1)) - 1))/a - c*((a*tk + 1)/a^2 - (exp(a*tk - a*tkm1)*(a*tkm1 + 1))/a^2),                                                                                   0]
+      % [(c*kpl*((d*tk + 1)/d^2 - (exp(d*tk - d*tkm1)*(d*tkm1 + 1))/d^2))/(a - d) - (c*kpl*((a*tk + 1)/a^2 - (exp(a*tk - a*tkm1)*(a*tkm1 + 1))/a^2))/(a - d) - (kpl*(exp(d*(tk - tkm1)) - 1))/(a - d) + (d*kpl*(exp(a*(tk - tkm1)) - 1))/(a*(a - d)), exp(d*(tk - tkm1)) - c*((d*tk + 1)/d^2 - (exp(d*tk - d*tkm1)*(d*tkm1 + 1))/d^2) - 1]
       % >> a = -1/T1P - kpl - kveqp
       % >> d = -1/T1L
       % >> eval(expATR)
@@ -254,13 +268,24 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
       auxvariable(1,:,:) =0;
       for iii = 1:Ntime-1
           nsubstep = 5;
+          currentTR = TRList(iii+1) -TRList(iii) ;
           deltat = currentTR /nsubstep ;
           % setup AIF
-          integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
-          %integrand = jmA0 * my_gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
-          integrand = jmA0 * gampdf(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
-          aiftermpyr = deltat * (kveqp/ve).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii))) .* integrand ; 
-          aiftermlac = deltat * (kveqp/ve).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
+          %integratedt = [TRList(iii):deltat:TRList(iii+1)] +deltat/2  ;
+          integratedt = TRList(iii)+ [1:2:2*nsubstep]*deltat/2;
+          ai3 = jmalpha -1;
+          integrand = zeros(size(repmat(t0qp,1,nsubstep)));
+          zzz = (repmat(integratedt(1:nsubstep )',1,lqp)'+ repmat(t0qp,1,nsubstep))/jmbeta;
+          integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+          % TODO need left shift
+          %nonzeroidx  =evaluate( zzz)>=0;
+          %integrand(nonzeroidx  ) = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz(nonzeroidx  ))+zzz(nonzeroidx  )-ai3) ) ./ jmbeta;
+          %zzz = max(0,(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep))/jmbeta);
+          %integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+          %integrand = jmA0 * gampdfad(repmat(integratedt(1:nsubstep )',1,lqp)'- repmat(t0qp,1,nsubstep),jmalpha,jmbeta) ;
+          aiftermpyr = deltat * repmat(kveqp/ve,1,nsubstep).*   exp((- T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii))) .* integrand ; 
+          aiftermlac = deltat * repmat(kveqp/ve,1,nsubstep).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii))))   ).* integrand ; 
+          %aiftermlac = deltat * repmat(kveqp/ve,1,nsubstep).*  ( (-kplqp.*exp((-T1Pqp.^(-1) - kplqp - kveqp/ve)*(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)) ) + kplqp.*exp(-T1Lqp.^(-1) *(TRList(iii+1)-deltat*[.5:1:nsubstep]-TRList(iii)))).* ((T1Pqp.^(-1) + kplqp + kveqp/ve) - T1Lqp.^(-1) ).^(-1)   ).* integrand ; 
   
           % setup state as linear constraint
           auxvariable(iii+1,1,:) =  reshape(cos(FaList(1,iii))*expATRoneone.* squeeze( auxvariable(iii,1,: ) ),1,1,lqp ) +  reshape( sum(aiftermpyr,2 ),1,1,lqp) ;
@@ -280,7 +305,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
             % sumstatevariable = squeeze(sum(repmat(sin(FaList)',1,1,lqp).*statevariable,1));
             sumstatevariable = optimexpr([Nspecies,lqp]);
             for jjj = 1:lqp
-               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TRList - t0qp(jjj)  , jmalpha , jmbeta);zeros(1,Ntime)]'  ),1)';
+               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdfad( TRList - t0qp(jjj)  , jmalpha , jmbeta);zeros(1,Ntime)]'  ),1)';
 
             end 
             diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
@@ -294,7 +319,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
           case('SumQuad')
             sumstatevariable = optimexpr([Nspecies,lqp]);
             for jjj = 1:lqp
-               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TRList - t0qp(jjj)  , jmalpha , jmbeta);zeros(1,Ntime)]'  ),1)';
+               sumstatevariable(:,jjj) =  sum(sin(FaList)'.*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdfad( TRList - t0qp(jjj)  , jmalpha , jmbeta);zeros(1,Ntime)]'  ),1)';
             end 
             % max total signal sum
             negHz=-sum(sum(sumstatevariable)) ;
@@ -459,7 +484,7 @@ function driverHPMIopt(NGauss,NumberUncertain,modelSNR,myoptions,ObjectiveType,G
   end 
 
 
-end
+%%end
 function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
     x0.FaList = reshape(xopt,Nspecies,Ntime);
     x0.state  = evaluate(auxvariable ,x0);
@@ -472,4 +497,14 @@ function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Nt
     jacobianState = initConst.ceqGrad(myidx.state,:);
     adjointvar =-jacobianState \objectiveGradState ;
     MIobjfun_Der = objectiveGradFA +  jacobianFA *   adjointvar ;
+end
+function y = fgamad(z,a)
+% Compute gampdf without error checking for z>0 and a>0.
+% Loader's saddle point expansion
+%[errorcode, z, a] = distchck(2,z,a);
+lnsr2pi = 0.9189385332046727; % log(sqrt(2*pi))
+ai3 = a;
+y = exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) ...
+    - (ai3.*log(ai3./z)+z-ai3) );
+%    - binodeviance(ai3,z));
 end
