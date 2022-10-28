@@ -29,8 +29,8 @@ myFAList(2,:) =  28;
 
 
 %numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
-numsolves =  (2+size(myFAList,2)+2)*length(snrList) 
-solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[],'objective',[],'plotlabel',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[]);
+numsolves =  (2+size(myFAList,2)+3)*length(snrList) 
+solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[],'objective',[],'plotlabel',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[],'TRList',[]);
 icount  = 0;
 %% for iobj = 1:numel(ObjectiveType)
 %%  for isolver = 1:numel(solverType)
@@ -52,7 +52,7 @@ hackgpList=5
 for isnr = 1:length(snrList)
    icount= icount+1;
    worktmp = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,'constDirect','TotalSignal',snrList(isnr)));
-   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','objective','Max','plotlabel','constMax','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',NaN);
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',worktmp.params.FaList,'solver','const','objective','Max','plotlabel','constMax','params',worktmp.params, 'Mxy',worktmp.Mxy, 'Mz',worktmp.Mz,'signuImage',worktmp.signuImage,'signu',worktmp.signu,'MIval',NaN,'TRList',worktmp.params.TRList);
 end
 
 % array info
@@ -68,7 +68,7 @@ model = HPKinetics.NewMultiPoolTofftsGammaVIF();
 
 for isnr = 1:length(snrList)
    icount= icount+1;
-   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','objective','MI','plotlabel','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
+   solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',cntrlparams.FaList,'solver','control','objective','MI','plotlabel','control','params',cntrlparams, 'Mxy',Mxycntrl, 'Mz',Mzcntrl,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN,'TRList',cntrlparams.TRList);
 end
 
 
@@ -83,7 +83,7 @@ for jjj = 1:size(myFAList,2)
   
   for isnr = 1:length(snrList)
      icount= icount+1;
-     solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',paretoparams.FaList,'solver',sprintf('paretoP%dL%d',myFAList(:,jjj)),'objective','Max','plotlabel',sprintf('paretoP%dL%dMax',myFAList(:,jjj)),'params',paretoparams, 'Mxy',Mxypareto, 'Mz',Mzpareto,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN);
+     solnList (icount) = struct('gp',-1,'snr',snrList(isnr),'numberuncertain',-1,'FaList',paretoparams.FaList,'solver',sprintf('paretoP%dL%d',myFAList(:,jjj)),'objective','Max','plotlabel',sprintf('paretoP%dL%dMax',myFAList(:,jjj)),'params',paretoparams, 'Mxy',Mxypareto, 'Mz',Mzpareto,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',NaN,'TRList',paretoparams.TRList);
   end
 end
 
@@ -92,14 +92,26 @@ hacksolvertype='interior-point'
 for isnr = 1:length(snrList)
    worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(1)));
    icount= icount+1;
-   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sLB',hacksolvertype,ObjectiveType{1} ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpLB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sLB',hacksolvertype,ObjectiveType{1} ),'params',worktmpLB.params, 'Mxy',worktmpLB.Mxyref, 'Mz',worktmpLB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpLB.fval,'TRList',worktmpLB.params.TRList);
 end
 
 for isnr = 1:length(snrList)
    worktmpUB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(end)));
    icount= icount+1;
-   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmp.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sUB',hacksolvertype,ObjectiveType{1} ),'params',worktmp.params, 'Mxy',worktmp.Mxyref, 'Mz',worktmp.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmp.fval);
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpUB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sUB',hacksolvertype,ObjectiveType{1} ),'params',worktmpUB.params, 'Mxy',worktmpUB.Mxyref, 'Mz',worktmpUB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpUB.fval,'TRList',worktmpUB.params.TRList);
 end
+
+for isnr = 1:length(snrList)
+   worktmpTR = load(sprintf('optim_variable_TR_FA_results/poptNG%dNu%d%s%sSNR%02dHermite-OptFAandTR.mat', hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(end)) ) 
+   icount= icount+1;
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpTR.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sTR',hacksolvertype,ObjectiveType{1} ),'params',worktmpTR.params, 'Mxy',worktmpTR.Mxyref, 'Mz',worktmpTR.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpTR.fval,'TRList',worktmpTR.popt.TRList);
+end
+
+% optim_variable_TR_FA_results/poptNG5Nu3interior-pointTotalSignalSNR02Hermite-OptFAandTR.mat
+% optim_variable_TR_FA_results/poptNG5Nu3interior-pointTotalSignalSNR05Hermite-OptFAandTR.mat
+% optim_variable_TR_FA_results/poptNG5Nu3interior-pointTotalSignalSNR10Hermite-OptFAandTR.mat
+% optim_variable_TR_FA_results/poptNG5Nu3interior-pointTotalSignalSNR15Hermite-OptFAandTR.mat
+% optim_variable_TR_FA_results/poptNG5Nu3interior-pointTotalSignalSNR20Hermite-OptFAandTR.mat
 
 % extract timehistory info
 num_trials = 25;
@@ -152,7 +164,7 @@ storet0opt    = zeros(num_trials+1,length(solnList));
 % num optimization vars
 numberParameters = 3
 
-loadDataHistory = true
+loadDataHistory = false
 if loadDataHistory 
   load('recovervalidate.mat') 
   idplot = (num_trials+1)*length(solnList);
@@ -224,10 +236,10 @@ else
        disp([Nspecies*(iii-1)+1 , Nspecies*(iii-1)+2 ,Ntime* Nspecies])
        klpqp =    0 ;     % @cmwalker where do I get this from ? 
        % 
-       currentTR = solnList(idesign ).params.TRList(iii+1) - solnList(idesign ).params.TRList(iii);
+       currentTR = solnList(idesign ).TRList(iii+1) - solnList(idesign ).TRList(iii);
        nsubstep = 5;
        deltat = currentTR /nsubstep ;
-       integratedt = [solnList(idesign ).params.TRList(iii):deltat:solnList(idesign ).params.TRList(iii+1)] +deltat/2  ;
+       integratedt = [solnList(idesign ).TRList(iii):deltat:solnList(idesign ).TRList(iii+1)] +deltat/2  ;
        integrand = fcn2optimexpr(@(bolusstart)A0*gampdf(integratedt(1:nsubstep )'- bolusstart ,solnList(idesign ).params.gammaPdfA(1),solnList(idesign ).params.gammaPdfB(1)) ,t0);
        % >> syms a  kpl d currentTR    T1P kveqp T1L 
        % >> expATR = expm([a,  0; kpl, d ] * currentTR )
@@ -247,13 +259,13 @@ else
        % A = [-1/T1P - kpl - kveqp,  0; kpl, -1/T1L ];
        expATR = [ exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)),                   0; (kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)))/(kpl + kveqp/solnList(idesign ).params.volumeFractions - 1/T1L + 1/T1P), exp(-currentTR/T1L)];
        % mid-point rule integration
-       aifterm = kveqp/solnList(idesign ).params.volumeFractions * deltat * [ exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).params.TRList(iii)) );
-     (kpl*exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).params.TRList(iii)) ) - kpl*exp(-1/T1L *(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).params.TRList(iii))))/((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions) + 1/T1L )] * integrand ;
+       aifterm = kveqp/solnList(idesign ).params.volumeFractions * deltat * [ exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii)) );
+     (kpl*exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii)) ) - kpl*exp(-1/T1L *(solnList(idesign ).TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii))))/((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions) + 1/T1L )] * integrand ;
        statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
        % 
        % TODO TODO - NOTE  that a simple change to minimize the expression within fcn2optimexpr is the difference between the code running or NOT
-       % DOES NOT RUN with this EXPRESSION: statesignal(:,iii+1)   =  fcn2optimexpr(@(newbolusstart)sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * gampdf( solnList(idesign ).params.TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ) ),t0 ) ;
-       statesignal(:,iii+1)   =  sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * fcn2optimexpr(@(newbolusstart)gampdf( solnList(idesign ).params.TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ),t0 ) ) ;
+       % DOES NOT RUN with this EXPRESSION: statesignal(:,iii+1)   =  fcn2optimexpr(@(newbolusstart)sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * gampdf( solnList(idesign ).TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ) ),t0 ) ;
+       statesignal(:,iii+1)   =  sin(solnList(idesign ).FaList(:,iii+1)).* ( solnList(idesign ).params.volumeFractions * statevariable(:,iii+1) +  (1-solnList(idesign ).params.volumeFractions) * [A0;0] * fcn2optimexpr(@(newbolusstart)gampdf( solnList(idesign ).TRList(iii+1) - newbolusstart  , solnList(idesign ).params.gammaPdfA(1) , solnList(idesign ).params.gammaPdfB(1) ),t0 ) ) ;
        statevariable(:,iii+1) =  cos(solnList(idesign ).FaList(:,iii+1)).* statevariable(:,iii+1);
      end
      truthstate  = evaluate(statevariable ,xstar);
@@ -349,16 +361,16 @@ else
          % plot
          idplot = (num_trials+1)*(idesign-1) + idtrial ;
          handle = figure(idplot )
-         plot(solnList(idesign ).params.TRList , timehistory(:,1,idtrial,idesign), 'b', ...
-              solnList(idesign ).params.TRList , timehistory(:,2,idtrial,idesign), 'b-.', ...
-              solnList(idesign ).params.TRList , timehistory(:,1,num_trials+1,idesign), 'r', ...
-              solnList(idesign ).params.TRList , timehistory(:,2,num_trials+1,idesign), 'r-.', ...
-              solnList(idesign ).params.TRList , initialsignal(1,:), 'g', ...
-              solnList(idesign ).params.TRList , initialsignal(2,:), 'g-.', ...
-              solnList(idesign ).params.TRList , truthsignal(1,:), 'm', ...
-              solnList(idesign ).params.TRList , truthsignal(2,:), 'm-.', ...
-              solnList(idesign ).params.TRList , slnsignal(1,:), 'k', ...
-              solnList(idesign ).params.TRList , slnsignal(2,:), 'k-.')
+         plot(solnList(idesign ).TRList , timehistory(:,1,idtrial,idesign), 'b', ...
+              solnList(idesign ).TRList , timehistory(:,2,idtrial,idesign), 'b-.', ...
+              solnList(idesign ).TRList , timehistory(:,1,num_trials+1,idesign), 'r', ...
+              solnList(idesign ).TRList , timehistory(:,2,num_trials+1,idesign), 'r-.', ...
+              solnList(idesign ).TRList , initialsignal(1,:), 'g', ...
+              solnList(idesign ).TRList , initialsignal(2,:), 'g-.', ...
+              solnList(idesign ).TRList , truthsignal(1,:), 'm', ...
+              solnList(idesign ).TRList , truthsignal(2,:), 'm-.', ...
+              solnList(idesign ).TRList , slnsignal(1,:), 'k', ...
+              solnList(idesign ).TRList , slnsignal(2,:), 'k-.')
          ylabel('Mxy')
          xlabel('sec')
          title(sprintf('curvefit %s %d %d',solnList(idesign ).solver,solnList(idesign ).snr,idtrial))
