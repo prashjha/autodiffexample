@@ -29,7 +29,7 @@ myFAList(2,:) =  28;
 
 
 %numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
-numsolves =  (2+size(myFAList,2)+3)*length(snrList) 
+numsolves =  (2+size(myFAList,2)+4)*length(snrList) 
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[],'objective',[],'plotlabel',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[],'TRList',[]);
 icount  = 0;
 %% for iobj = 1:numel(ObjectiveType)
