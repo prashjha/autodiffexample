@@ -104,13 +104,13 @@ end
 for isnr = 1:length(snrList)
    worktmpTRLB = load(sprintf('optim_variable_TR_FA_results/poptNG%dNu%d%s%sSNR%02dHermite-OptFAandTR.mat', hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList( 1 )) ) 
    icount= icount+1;
-   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpTRLB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sTR',hacksolvertype,ObjectiveType{1} ),'params',worktmpTRLB.params, 'Mxy',worktmpTRLB.Mxyref, 'Mz',worktmpTRLB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpTRLB.fval,'TRList',worktmpTRLB.popt.TRList);
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpTRLB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sTRLB',hacksolvertype,ObjectiveType{1} ),'params',worktmpTRLB.params, 'Mxy',worktmpTRLB.Mxyref, 'Mz',worktmpTRLB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpTRLB.fval,'TRList',worktmpTRLB.popt.TRList);
 end
 
 for isnr = 1:length(snrList)
    worktmpTRUB = load(sprintf('optim_variable_TR_FA_results/poptNG%dNu%d%s%sSNR%02dHermite-OptFAandTR.mat', hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(end)) ) 
    icount= icount+1;
-   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpTRUB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sTR',hacksolvertype,ObjectiveType{1} ),'params',worktmpTRUB.params, 'Mxy',worktmpTRUB.Mxyref, 'Mz',worktmpTRUB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpTRUB.fval,'TRList',worktmpTRUB.popt.TRList);
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpTRUB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sTRUB',hacksolvertype,ObjectiveType{1} ),'params',worktmpTRUB.params, 'Mxy',worktmpTRUB.Mxyref, 'Mz',worktmpTRUB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpTRUB.fval,'TRList',worktmpTRUB.popt.TRList);
 end
 
 % optim_variable_TR_FA_results/poptNG5Nu3interior-pointTotalSignalSNR02Hermite-OptFAandTR.mat
@@ -266,7 +266,7 @@ else
        expATR = [ exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)),                   0; (kpl*exp(-currentTR/T1L) - kpl*exp(-currentTR*(kpl + kveqp/solnList(idesign ).params.volumeFractions + 1/T1P)))/(kpl + kveqp/solnList(idesign ).params.volumeFractions - 1/T1L + 1/T1P), exp(-currentTR/T1L)];
        % mid-point rule integration
        aifterm = kveqp/solnList(idesign ).params.volumeFractions * deltat * [ exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii)) );
-     (kpl*exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).params.TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii)) ) - kpl*exp(-1/T1L *(solnList(idesign ).TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii))))/((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions) + 1/T1L )] * integrand ;
+     (kpl*exp((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions)*(solnList(idesign ).TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii)) ) - kpl*exp(-1/T1L *(solnList(idesign ).TRList(iii+1)-deltat*[.5:1:nsubstep]-solnList(idesign ).TRList(iii))))/((-1/T1P - kpl - kveqp/solnList(idesign ).params.volumeFractions) + 1/T1L )] * integrand ;
        statevariable(:,iii+1) =  expATR *( statevariable(:,iii ))   + aifterm     ;
        % 
        % TODO TODO - NOTE  that a simple change to minimize the expression within fcn2optimexpr is the difference between the code running or NOT
