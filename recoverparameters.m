@@ -23,13 +23,13 @@ myFAList =  repmat([6:6:35],2,1);
 myFAList(:,end)  =  35;
 myFAList(2,:) =  28;
 
-myFAList =  repmat([3 35],2,1);
+myFAList =  repmat([3 14 35],2,1);
 myFAList(2,:) =  28;
 
 
 
 %numsolves = numel(ObjectiveType)* numel(solverType) * length(gpList) * length(uncertainList) * length(snrList) + (2+size(myFAList,2))*length(snrList) + 2*length(snrList)
-numsolves =  (2+size(myFAList,2)+4)*length(snrList) 
+numsolves =  (2+size(myFAList,2)+6)*length(snrList) 
 solnList(numsolves) = struct('gp',[],'snr',[],'numberuncertain',[],'FaList',[],'solver',[],'objective',[],'plotlabel',[], 'params', [], 'Mxy', [], 'Mz', [],'signuImage',[],'signu',[],'MIval',[],'TRList',[]);
 icount  = 0;
 %% for iobj = 1:numel(ObjectiveType)
@@ -87,12 +87,18 @@ for jjj = 1:size(myFAList,2)
   end
 end
 
-%UB/LB for MI solution
+%UB/Mid/LB for MI solution
 hacksolvertype='interior-point'
 for isnr = 1:length(snrList)
    worktmpLB = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(1)));
    icount= icount+1;
    solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpLB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sLB',hacksolvertype,ObjectiveType{1} ),'params',worktmpLB.params, 'Mxy',worktmpLB.Mxyref, 'Mz',worktmpLB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpLB.fval,'TRList',worktmpLB.params.TRList);
+end
+
+for isnr = 1:length(snrList)
+   worktmpMD = load(sprintf('poptNG%dNu%d%s%sSNR%02dHermite.mat',hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(3)));
+   icount= icount+1;
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpMD.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sMD',hacksolvertype,ObjectiveType{1} ),'params',worktmpMD.params, 'Mxy',worktmpMD.Mxyref, 'Mz',worktmpMD.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpMD.fval,'TRList',worktmpMD.params.TRList);
 end
 
 for isnr = 1:length(snrList)
@@ -105,6 +111,12 @@ for isnr = 1:length(snrList)
    worktmpTRLB = load(sprintf('optim_variable_TR_FA_results/poptNG%dNu%d%s%sSNR%02dHermite-OptFAandTR.mat', hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList( 1 )) ) 
    icount= icount+1;
    solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpTRLB.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sTRLB',hacksolvertype,ObjectiveType{1} ),'params',worktmpTRLB.params, 'Mxy',worktmpTRLB.Mxyref, 'Mz',worktmpTRLB.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpTRLB.fval,'TRList',worktmpTRLB.popt.TRList);
+end
+
+for isnr = 1:length(snrList)
+   worktmpTRMD = load(sprintf('optim_variable_TR_FA_results/poptNG%dNu%d%s%sSNR%02dHermite-OptFAandTR.mat', hackgpList,hackuncertainList,hacksolvertype,ObjectiveType{1},snrList(3)) ) 
+   icount= icount+1;
+   solnList (icount) = struct('gp',hackgpList,'snr',snrList(isnr),'numberuncertain',hackuncertainList,'FaList',worktmpTRMD.popt.FaList,'solver',hacksolvertype,'objective',ObjectiveType{1},'plotlabel',sprintf('%s%sTRMD',hacksolvertype,ObjectiveType{1} ),'params',worktmpTRMD.params, 'Mxy',worktmpTRMD.Mxyref, 'Mz',worktmpTRMD.Mzref,'signuImage',solnList(isnr).signuImage,'signu',solnList(isnr).signu,'MIval',worktmpTRMD.fval,'TRList',worktmpTRMD.popt.TRList);
 end
 
 for isnr = 1:length(snrList)
@@ -419,21 +431,27 @@ textscale(4,1) = .02;
 myupperb = .24 * ones(numplots ,length(snrList));
 myupperb(5,2) = .20;
 myupperb(6,2) = .20;
-myplottitle = { solnList(0*length(snrList)+1).plotlabel solnList(1*length(snrList)+1).plotlabel solnList(2*length(snrList)+1).plotlabel solnList(3*length(snrList)+1).plotlabel solnList(4*length(snrList)+1).plotlabel solnList(5*length(snrList)+1).plotlabel solnList(6*length(snrList)+1).plotlabel solnList(7*length(snrList)+1).plotlabel} 
-myplotlabel = { "" "" "" "" "" "" "" "" } 
-myplottitle(1) = cellstr("\theta_P=20deg, \theta_L=30deg ")
-myplottitle(3) = cellstr("constant")
-myplottitle(4) = cellstr("constant")
-myplottitle(5) = cellstr("varying")
-myplottitle(6) = cellstr("varying")
-myplottitle(7) = cellstr("TR")
-myplottitle(8) = cellstr("TR")
+myplottitle = { solnList(0*length(snrList)+1).plotlabel solnList(1*length(snrList)+1).plotlabel solnList(2*length(snrList)+1).plotlabel solnList(3*length(snrList)+1).plotlabel solnList(4*length(snrList)+1).plotlabel solnList(5*length(snrList)+1).plotlabel solnList(6*length(snrList)+1).plotlabel solnList(7*length(snrList)+1).plotlabel solnList(8*length(snrList)+1).plotlabel solnList(9*length(snrList)+1).plotlabel solnList(10*length(snrList)+1).plotlabel} 
+myplotlabel = { "" "" "" "" "" "" "" "" "" "" "" } 
+myplottitle(1)  = cellstr("\theta_P=20deg, \theta_L=30deg ")
+myplottitle(2)  = cellstr("constant")
+myplottitle(3)  = cellstr("constant")
+myplottitle(4)  = cellstr("constant")
+myplottitle(5)  = cellstr("varying")
+myplottitle(6)  = cellstr("varying")
+myplottitle(7)  = cellstr("varying")
+myplottitle(8)  = cellstr("TR")
+myplottitle(9)  = cellstr("TR")
+myplottitle(10) = cellstr("TR")
 myplotlabel(3) = cellstr("K_{OED_{20}}")
-myplotlabel(4) = cellstr("K_{OED_{2}}")
+myplotlabel(4) = cellstr("K_{OED_{10}}")
 myplotlabel(5) = cellstr("K_{OED_{2}}")
-myplotlabel(6) = cellstr("K_{OED_{20}}")
-myplotlabel(7) = cellstr("K_{OED_{2}}")
+myplotlabel(6) = cellstr("K_{OED_{2}}")
+myplotlabel(7) = cellstr("K_{OED_{10}}")
 myplotlabel(8) = cellstr("K_{OED_{20}}")
+myplotlabel(9) = cellstr("K_{OED_{2}}")
+myplotlabel(10) = cellstr("K_{OED_{10}}")
+myplotlabel(11) = cellstr("K_{OED_{20}}")
 for isolver = 1:numplots 
   idplot = idplot+1
   handle = figure(idplot )
