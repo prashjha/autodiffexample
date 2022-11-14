@@ -182,7 +182,7 @@ storet0opt    = zeros(num_trials+1,length(solnList));
 % num optimization vars
 numberParameters = 3
 
-loadDataHistory = false
+loadDataHistory = true
 if loadDataHistory 
   load('recovervalidate.mat') 
   idplot = (num_trials+1)*length(solnList);
@@ -434,15 +434,16 @@ myupperb(6,2) = .20;
 myplottitle = { solnList(0*length(snrList)+1).plotlabel solnList(1*length(snrList)+1).plotlabel solnList(2*length(snrList)+1).plotlabel solnList(3*length(snrList)+1).plotlabel solnList(4*length(snrList)+1).plotlabel solnList(5*length(snrList)+1).plotlabel solnList(6*length(snrList)+1).plotlabel solnList(7*length(snrList)+1).plotlabel solnList(8*length(snrList)+1).plotlabel solnList(9*length(snrList)+1).plotlabel solnList(10*length(snrList)+1).plotlabel} 
 myplotlabel = { "" "" "" "" "" "" "" "" "" "" "" } 
 myplottitle(1)  = cellstr("\theta_P=20deg, \theta_L=30deg ")
-myplottitle(2)  = cellstr("constant")
+myplottitle(2)  = cellstr("control")
 myplottitle(3)  = cellstr("constant")
 myplottitle(4)  = cellstr("constant")
-myplottitle(5)  = cellstr("varying")
+myplottitle(5)  = cellstr("constant")
 myplottitle(6)  = cellstr("varying")
 myplottitle(7)  = cellstr("varying")
-myplottitle(8)  = cellstr("TR")
+myplottitle(8)  = cellstr("varying")
 myplottitle(9)  = cellstr("TR")
 myplottitle(10) = cellstr("TR")
+myplottitle(11) = cellstr("TR")
 myplotlabel(3) = cellstr("K_{OED_{20}}")
 myplotlabel(4) = cellstr("K_{OED_{10}}")
 myplotlabel(5) = cellstr("K_{OED_{2}}")
