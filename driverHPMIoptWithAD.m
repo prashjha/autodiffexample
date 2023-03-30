@@ -267,7 +267,7 @@ if optf
     end 
     %statematrix = optimexpr([lqp,lqp]);
     expandvar  = ones(1,lqp);
-    diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
+    %diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
     Hz = 0;
     %for jjj=1:lqp2
     %  znu=xn2{1}(jjj) ;
@@ -275,7 +275,7 @@ if optf
     %end
     %for iii=1:lqp
     quadpts.kpl =  xn1{1};
-    tmpstatevariable (statevariable ,quadpts);
+    tmpstatevariable= evaluate (auxvariable ,quadpts);
     quadpts.kve =  xn2{1};
     quadpts.t0 =  xn3{1};
     for iqp = 1:NGauss
