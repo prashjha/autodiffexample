@@ -33,8 +33,14 @@ toc
 myint 
 
 
-syms g0 g1 g2 g3 g4 g5 g6 g7 g8 g9
 syms x0 x1 x2 x3 x4 x5 x6 x7 x8 x9
-
-g7 =     w' * (x *x0*x1*x2*x3*x4*x5*x6)
-
+tic
+g7 = w' * (x *x0*x1*x2*x3*x4*x5*x6)
+g6 = w' *subs(g7 , {x6}, x )
+g5 = w' *subs(g6 , {x5}, x )
+g4 = w' *subs(g5 , {x4}, x )
+g3 = w' *subs(g4 , {x3}, x )
+g2 = w' *subs(g3 , {x2}, x )
+g1 = w' *subs(g2 , {x1}, x )
+g0 = w' *subs(g1 , {x0}, x )
+toc
