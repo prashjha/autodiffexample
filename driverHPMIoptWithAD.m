@@ -114,10 +114,10 @@ if optf
 
     % setup optimization variables
     Nspecies = 2
-    FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
-    TRList = optimvar('TR',Ntime-1,1,'LowerBound',0, 'UpperBound',5);%TR_list;
+    syms FaList [Nspecies,Ntime] positive real
+    %TRList = optimvar('TR',Ntime-1,1,'LowerBound',0, 'UpperBound',5);%TR_list;
     %TRList = optimvar('TR','LowerBound',0, 'UpperBound',5);%TR_list;
-    %TRList = TR;
+    TRList = TR;
     % [0;cumsum( TR* ones(Ntime-1,1))]
 
     NGauss  = 3
@@ -132,12 +132,10 @@ if optf
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     end 
     lqp=length(xn{1}(:));
-    statevariable    = optimvar('state',Nspecies,Ntime,NGauss,NGauss,NGauss,'LowerBound',0);
-    auxvariable      = optimexpr(    [Nspecies,Ntime,NGauss,NGauss,NGauss]);
-    kplsymvar        = optimvar('kpl',NGauss);
-    kvesymvar        = optimvar('kve',NGauss);
-    t0symvar         = optimvar('t0',NGauss);
-    stateconstraint  = optimconstr(    [Nspecies,Ntime,NGauss,NGauss,NGauss]);
+    syms statevariable    [Nspecies,Ntime,NGauss,NGauss,NGauss] real
+    syms kplsymvar   [1 NGauss] positive real
+    syms kvesymvar   [1 NGauss] positive real
+    syms t0symvar    [1 NGauss] positive real
 
     modelSNR = 20 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
@@ -149,10 +147,9 @@ if optf
     lqp2=length(xn2{1}(:));
 
     disp('build state variable')
-    stateconstraint(:,1,:,:,:)  = statevariable(:,1,:,:,:) ==0;
-    auxvariable(:,1,:,:,:) =0;
-    %TimeList = (0:(Ntime-1))*TRList ;
-    TimeList = [0;cumsum( TRList)]
+    statevariable(:,1,:,:,:) ==0;
+    TimeList = (0:(Ntime-1))*TRList ;
+    %TimeList = [0;cumsum( TRList)]
     for iqp = 1:NGauss
       for jqp = 1:NGauss
         for kqp = 1:NGauss
@@ -180,8 +177,8 @@ if optf
 
       % loop over time
       for iii = 1:Ntime-1
-        currentTR = TRList(iii) ;
-        %currentTR = TRList ;
+        %currentTR = TRList(iii) ;
+        currentTR = TRList ;
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
         % setup AIF
@@ -236,9 +233,7 @@ if optf
         %aifterm =  [-(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) + integrand(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) - integrand(iii+1)*TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii+1)*TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii)*TimeList(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp) - integrand(iii)*TimeList(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp))/((TimeList(iii+1) - TimeList(iii))*(kplqp + kveqp + 1/T1Pqp)^2) ; -(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii+1)*kplqp*TimeList(iii+1) - integrand(iii+1)*kplqp*TimeList(iii) - integrand(iii)*kplqp*TimeList(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*kplqp*TimeList(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)))/(kplqp^2*(TimeList(iii+1) - TimeList(iii)))];
 
         expATR = [ exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)))/(kplqp + kveqp/ve - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
-        auxvariable(:,iii+1,iqp,jqp,kqp) =  expATR * auxvariable(:,iii,iqp,jqp,kqp) ;
-        auxvariable(:,iii+1,iqp,jqp,kqp) =  cos(FaList(:,iii+1)).* auxvariable(:,iii+1,iqp,jqp,kqp)   + [1;1];
-        stateconstraint(:,iii+1,iqp,jqp,kqp) = statevariable(:,iii+1,iqp,jqp,kqp) ==  expATR *(cos(FaList(:,iii)).*statevariable(:,iii,iqp,jqp,kqp ))   + aifterm ;
+        statevariable(:,iii+1,iqp,jqp,kqp) =  expATR *(cos(FaList(:,iii+1)).* statevariable(:,iii,iqp,jqp,kqp)) +  aifterm ;
       end
     end
     end
@@ -256,7 +251,7 @@ if optf
     %% plot(dbgparams.TRList,Mzdbg(1,:),'b',dbgparams.TRList,Mzdbg(2,:),'k',dbgparams.TRList,mystate(1,:,1),'b--',dbgparams.TRList,mystate(2,:,1),'k--')
 
     disp('build objective function')
-    sumstatevariable = optimexpr([Nspecies,NGauss,NGauss,NGauss]);
+    syms sumstatevariable [Nspecies,NGauss,NGauss,NGauss] real;
     for iqp = 1:NGauss
       for jqp = 1:NGauss
         for kqp = 1:NGauss
@@ -274,10 +269,6 @@ if optf
     %  Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
     %end
     %for iii=1:lqp
-    quadpts.kpl =  xn1{1};
-    tmpstatevariable= evaluate (auxvariable ,quadpts);
-    quadpts.kve =  xn2{1};
-    quadpts.t0 =  xn3{1};
     for iqp = 1:NGauss
       for jqp = 1:NGauss
         for kqp = 1:NGauss
@@ -287,10 +278,11 @@ if optf
             %for kkk=1:lqp
             for lqp = 1:NGauss
               for mqp = 1:NGauss
-              for nqp = 1:NGauss
-                lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sum(statevariable(1,:,iqp,jqp,kqp))- sum(statevariable(1,:,lqp,mqp,nqp)))^2/sqrt(2)/signu);
-                lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sum(statevariable(2,:,iqp,jqp,kqp))- sum(statevariable(2,:,lqp,mqp,nqp)))^2/sqrt(2)/signu);
-            end
+              lntermtmp  = wn3' *subs(exp(-(sumstatevariable(1,1,1,1)- sumstatevariable(1,1,1,:)).^2/sqrt(2)/signu)  , t0symvar', xn3{1} )
+             % for nqp = 1:NGauss
+             %   lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sumstatevariable(1,iqp,jqp,kqp)- sumstatevariable(1,lqp,mqp,nqp))^2/sqrt(2)/signu);
+             %   lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sumstatevariable(2,iqp,jqp,kqp)- sumstatevariable(2,lqp,mqp,nqp))^2/sqrt(2)/signu);
+             % end
             end
             end
             % for function
