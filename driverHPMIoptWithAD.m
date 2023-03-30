@@ -115,9 +115,9 @@ if optf
     % setup optimization variables
     Nspecies = 2
     FaList = optimvar('FaList',Nspecies,Ntime,'LowerBound',0, 'UpperBound',35*pi/180);
-    %TRList = optimvar('TR',Ntime-1,1,'LowerBound',0, 'UpperBound',5);%TR_list;
+    TRList = optimvar('TR',Ntime-1,1,'LowerBound',0, 'UpperBound',5);%TR_list;
     %TRList = optimvar('TR','LowerBound',0, 'UpperBound',5);%TR_list;
-    TRList = TR;
+    %TRList = TR;
     % [0;cumsum( TR* ones(Ntime-1,1))]
 
     NGauss  = 3
@@ -125,13 +125,19 @@ if optf
     switch (NumberUncertain)
        case(3)
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(5:2:9)],[tisinput(6:2:10)]);
+         [x1,xn1,xm1,w1,wn1]=GaussHermiteNDGauss(NGauss,kplmean,kplstdd);
+         [x2,xn2,xm2,w2,wn2]=GaussHermiteNDGauss(NGauss,kvemean,kvestdd);
+         [x3,xn3,xm3,w3,wn3]=GaussHermiteNDGauss(NGauss,t0mean ,t0sttd );
        case(4)
          [x,xn,xm,w,wn]=GaussHermiteNDGauss(NGauss,[tisinput(1:2:7)],[tisinput(2:2:8)]);
     end 
     lqp=length(xn{1}(:));
-    statevariable    = optimvar('state',Nspecies,Ntime,lqp,'LowerBound',0);
-    auxvariable      = optimexpr(    [Nspecies,Ntime,lqp]);
-    stateconstraint  = optimconstr(    [Nspecies,Ntime,lqp]);
+    statevariable    = optimvar('state',Nspecies,Ntime,NGauss,NGauss,NGauss,'LowerBound',0);
+    auxvariable      = optimexpr(    [Nspecies,Ntime,NGauss,NGauss,NGauss]);
+    kplsymvar        = optimvar('kpl',NGauss);
+    kvesymvar        = optimvar('kve',NGauss);
+    t0symvar         = optimvar('t0',NGauss);
+    stateconstraint  = optimconstr(    [Nspecies,Ntime,NGauss,NGauss,NGauss]);
 
     modelSNR = 20 ; % TODO - FIXME
     signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
@@ -143,19 +149,22 @@ if optf
     lqp2=length(xn2{1}(:));
 
     disp('build state variable')
-    stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
-    auxvariable(:,1,:) =0;
-    TimeList = (0:(Ntime-1))*TRList ;
-    %TimeList = [0;cumsum( TRList)]
-    for iqp = 1:lqp
+    stateconstraint(:,1,:,:,:)  = statevariable(:,1,:,:,:) ==0;
+    auxvariable(:,1,:,:,:) =0;
+    %TimeList = (0:(Ntime-1))*TRList ;
+    TimeList = [0;cumsum( TRList)]
+    for iqp = 1:NGauss
+      for jqp = 1:NGauss
+        for kqp = 1:NGauss
+      iqp,jqp,kqp
       switch (NumberUncertain)
          case(3)
            T1Pqp   = T1pmean;
            T1Lqp   = T1lmean;
-           kplqp   = xn{1}(iqp);
+           kplqp   = kplsymvar(iqp);
            klpqp   =    0 ;     % @cmwalker where do I get this from ? 
-           kveqp   = xn{2}(iqp);
-           t0qp    = xn{3}(iqp); 
+           kveqp   = kvesymvar(jqp);
+           t0qp    = t0symvar(kqp); 
          case(4)
            T1Pqp   = xn{1}(iqp);
            T1Lqp   = xn{2}(iqp);
@@ -171,17 +180,16 @@ if optf
 
       % loop over time
       for iii = 1:Ntime-1
-        %currentTR = TRList(iii) ;
-        currentTR = TRList ;
+        currentTR = TRList(iii) ;
+        %currentTR = TRList ;
         nsubstep = 5;
         deltat = currentTR /nsubstep ;
         % setup AIF
         integratedt = TimeList(iii)+ [1:2:2*nsubstep]*deltat/2;
-        % ai3 = jmalpha -1;
-        % zzz = (integratedt +t0qp)/jmbeta;
-        % integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
-
-        integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
+        ai3 = jmalpha -1;
+        zzz = (integratedt +t0qp)/jmbeta;
+        integrand = jmA0  * exp(-lnsr2pi -0.5*log(ai3) - stirlerr(ai3) - (ai3.*log(ai3./zzz)+zzz-ai3) ) ./ jmbeta;
+        %integrand = jmA0 * gampdf(integratedt(1:nsubstep )'-t0qp,jmalpha,jmbeta) ;
 
         % >> syms a  kpl d currentTR    T1P kveqp T1L 
         % >> expATR = expm([a,  0; kpl, d ] * currentTR )
@@ -221,32 +229,76 @@ if optf
 
         % 
         % mid-point rule integration gampdf
-        aifterm = kveqp/ve * deltat * [ exp((-1/T1Pqp - kplqp - kveqp/ve)*(TimeList(iii+1)-deltat*[.5:1:nsubstep] -TimeList(iii))); kplqp*(-exp((-1/T1Pqp - kplqp - kveqp/ve)*(TimeList(iii+1)-deltat*[.5:1:nsubstep] -TimeList(iii)) ) + exp(-1/T1Lqp *(TimeList(iii+1)-deltat*[.5:1:nsubstep] -TimeList(iii)) ))/(1/T1Pqp + kplqp + kveqp/ve - 1/T1Lqp )] * integrand ;
+        %aifterm = kveqp/ve * deltat * [ exp((-1/T1Pqp - kplqp - kveqp/ve)*(TimeList(iii+1)-deltat*[.5:1:nsubstep] -TimeList(iii))); kplqp*(-exp((-1/T1Pqp - kplqp - kveqp/ve)*(TimeList(iii+1)-deltat*[.5:1:nsubstep] -TimeList(iii)) ) + exp(-1/T1Lqp *(TimeList(iii+1)-deltat*[.5:1:nsubstep] -TimeList(iii)) ))/(1/T1Pqp + kplqp + kveqp/ve - 1/T1Lqp )] * integrand ;
         % mid-point rule integration df
-        %aifterm = kveqp/ve * deltat * [ exp((-1/T1Pqp - kplqp - kveqp/ve)*deltat*[.5:1:nsubstep] ); kplqp*(-exp((-1/T1Pqp - kplqp - kveqp/ve)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp/ve - 1/T1Lqp )] * integrand' ;
+        aifterm = kveqp/ve * deltat * [ exp((-1/T1Pqp - kplqp - kveqp/ve)*deltat*[.5:1:nsubstep] ); kplqp*(-exp((-1/T1Pqp - kplqp - kveqp/ve)*deltat*[.5:1:nsubstep] ) + exp(-1/T1Lqp *deltat*[.5:1:nsubstep] ))/(1/T1Pqp + kplqp + kveqp/ve - 1/T1Lqp )] * integrand' ;
         % symbolic integration
         %aifterm =  [-(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) + integrand(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp)) - integrand(iii+1)*TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii+1)*TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) + integrand(iii)*TimeList(iii+1)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp) - integrand(iii)*TimeList(iii)*exp(TimeList(iii)*(kplqp + kveqp + 1/T1Pqp) - TimeList(iii+1)*(kplqp + kveqp + 1/T1Pqp))*(kplqp + kveqp + 1/T1Pqp))/((TimeList(iii+1) - TimeList(iii))*(kplqp + kveqp + 1/T1Pqp)^2) ; -(integrand(iii+1) - integrand(iii) - integrand(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii+1)*kplqp*TimeList(iii+1) - integrand(iii+1)*kplqp*TimeList(iii) - integrand(iii)*kplqp*TimeList(iii+1)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)) + integrand(iii)*kplqp*TimeList(iii)*exp(kplqp*TimeList(iii+1) - kplqp*TimeList(iii)))/(kplqp^2*(TimeList(iii+1) - TimeList(iii)))];
 
         expATR = [ exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)))/(kplqp + kveqp/ve - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
-        auxvariable(:,iii+1,iqp) =  expATR *(cos(FaList(:,iii)).*auxvariable(:,iii,iqp ))   + aifterm ;
-        stateconstraint(:,iii+1,iqp) = statevariable(:,iii+1,iqp) ==  expATR *(cos(FaList(:,iii)).*statevariable(:,iii,iqp ))   + aifterm ;
+        auxvariable(:,iii+1,iqp,jqp,kqp) =  expATR * auxvariable(:,iii,iqp,jqp,kqp) ;
+        auxvariable(:,iii+1,iqp,jqp,kqp) =  cos(FaList(:,iii+1)).* auxvariable(:,iii+1,iqp,jqp,kqp)   + [1;1];
+        stateconstraint(:,iii+1,iqp,jqp,kqp) = statevariable(:,iii+1,iqp,jqp,kqp) ==  expATR *(cos(FaList(:,iii)).*statevariable(:,iii,iqp,jqp,kqp ))   + aifterm ;
       end
     end
+    end
+    end
+    %% % debug
+    %% dbgparams = struct('t0',[xn{3}(1);0],'gammaPdfA',[alphamean(1)  ;1],'gammaPdfB',[betamean(1);1],...
+    %%     'scaleFactor',VIF_scale_fact,'T1s',[T1pmean(1),T1lmean(1)],'ExchangeTerms',[0,xn{1}(1) ;0,0],...
+    %%     'TRList',TR_list,'PerfusionTerms',[xn{2}(1),0],'volumeFractions',ve, 'fitOptions', opts);
+    %% dbgparams.FaList = flips;
+    %% dbgparams.TR = TR* ones(Ntime-1,1);
+    %% [t_axis,Mxydbg,Mzdbg] = model.compile(M0.',dbgparams);
+    %% dbgparams.FaList = flips;
+    %% mystate  = evaluate(auxvariable ,dbgparams);
+    %% figure(11)
+    %% plot(dbgparams.TRList,Mzdbg(1,:),'b',dbgparams.TRList,Mzdbg(2,:),'k',dbgparams.TRList,mystate(1,:,1),'b--',dbgparams.TRList,mystate(2,:,1),'k--')
 
     disp('build objective function')
-    sumstatevariable = optimexpr([Nspecies,lqp]);
-    for jjj = 1:lqp
-       %sumstatevariable(:,jjj) =  sum(sin(FaList) .*    statevariable(:,:,jjj),2);
-       sumstatevariable(:,jjj) =  sum(sin(FaList).*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TimeList - t0qp  , jmalpha , jmbeta);zeros(1,Ntime)]  ),2);
+    sumstatevariable = optimexpr([Nspecies,NGauss,NGauss,NGauss]);
+    for iqp = 1:NGauss
+      for jqp = 1:NGauss
+        for kqp = 1:NGauss
+       sumstatevariable(:,iqp,jqp,kqp) =  sum(sin(FaList) .*    statevariable(:,:,iqp,jqp,kqp),2);
+       %sumstatevariable(:,jjj) =  sum(sin(FaList).*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TimeList - t0qp  , jmalpha , jmbeta);zeros(1,Ntime)]  ),2);
+    end 
+    end 
     end 
     %statematrix = optimexpr([lqp,lqp]);
     expandvar  = ones(1,lqp);
     diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
     Hz = 0;
-    for jjj=1:lqp2
-      znu=xn2{1}(jjj) ;
-      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
-      %Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2                             ) * wn(:)));
+    %for jjj=1:lqp2
+    %  znu=xn2{1}(jjj) ;
+    %  Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+    %end
+    %for iii=1:lqp
+    quadpts.kpl =  xn1{1};
+    tmpstatevariable (statevariable ,quadpts);
+    quadpts.kve =  xn2{1};
+    quadpts.t0 =  xn3{1};
+    for iqp = 1:NGauss
+      for jqp = 1:NGauss
+        for kqp = 1:NGauss
+        for jjj=1:lqp2
+            znu=xn2{1}(jjj) ;
+            lntermtmp=0;
+            %for kkk=1:lqp
+            for lqp = 1:NGauss
+              for mqp = 1:NGauss
+              for nqp = 1:NGauss
+                lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sum(statevariable(1,:,iqp,jqp,kqp))- sum(statevariable(1,:,lqp,mqp,nqp)))^2/sqrt(2)/signu);
+                lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sum(statevariable(2,:,iqp,jqp,kqp))- sum(statevariable(2,:,lqp,mqp,nqp)))^2/sqrt(2)/signu);
+            end
+            end
+            end
+            % for function
+            lnterm = log(lntermtmp)+log(pi^(-1.5));
+            Hz = Hz + wn1(iqp) *wn2(jqp) *wn3(kqp) * wn2(jjj) * lnterm;
+        end
+    end
+    end
     end
     %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
     MIGaussObj = Hz;
@@ -269,15 +321,15 @@ if optf
     
 
     % truthconstraint = infeasibility(stateconstraint,x0);
-    %InitialGuess =  [flips(:);TR* ones(Ntime-1,1) ];   
-    %pmin =  [flips(:)*0;zeros(Ntime-1,1)   ];     
-    %pmax =  [flips(:)*0+35*pi/180;5*ones(Ntime-1,1) ];
+    InitialGuess =  [flips(:);TR* ones(Ntime-1,1) ];   
+    pmin =  [flips(:)*0;zeros(Ntime-1,1)   ];     
+    pmax =  [flips(:)*0+35*pi/180;5*ones(Ntime-1,1) ];
     %InitialGuess =  [flips(:);TR ];   
     %pmin =  [flips(:)*0;0 ];     
     %pmax =  [flips(:)*0+35*pi/180;5 ];
-    InitialGuess =  [flips(:) ];   
-    pmin =  [flips(:)*0 ];     
-    pmax =  [flips(:)*0+35*pi/180 ];
+    %InitialGuess =  [flips(:) ];   
+    %pmin =  [flips(:)*0 ];     
+    %pmax =  [flips(:)*0+35*pi/180 ];
     tolx=1.e-9;
     tolfun=5.e-4;
     maxiter=400;
@@ -314,7 +366,6 @@ if optf
       end
     optparams.FaList = reshape(designopt(myidx.FaList),size(params.FaList ));
     [t_axisopt,Mxyopt,Mzopt] = model.compile(M0.',params);
-    mystate  = evaluate(auxvariable ,optparams);
     figure(6)
     plot(optparams.TRList,Mxyopt(1,:),'b',optparams.TRList,Mxyopt(2,:),'k')
     ylabel('MI Mxy')
@@ -324,8 +375,8 @@ if optf
     ylabel('MI FA')
     xlabel('sec')
     handle = figure(8)
-    plot(optparams.TRList,Mzopt(1,:),'b',optparams.TRList,Mzopt(2,:),'k',optparams.TRList,cos(optparams.FaList(1,:)).*mystate(1,:,1),'b--',optparams.TRList,cos(optparams.FaList(2,:)).*mystate(2,:,1),'k--')
-    plot(optparams.TRList,Mzopt(1,:),'b',optparams.TRList,Mzopt(2,:),'k',optparams.TRList,mystate(1,:,1),'b--',optparams.TRList,mystate(2,:,1),'k--')
+    plot(optparams.TRList,Mzopt(1,:),'b',optparams.TRList,Mzopt(2,:),'k')
+    plot(optparams.TRList,Mzopt(1,:),'b',optparams.TRList,Mzopt(2,:),'k')
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
 end 
@@ -338,19 +389,19 @@ end
 
 function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
     x0.FaList = reshape(xopt(myidx.FaList),Nspecies,Ntime);
-    %x0.TR     = xopt(myidx.TR);
+    x0.TR     = xopt(myidx.TR);
     x0.state  = evaluate(auxvariable ,x0);
-    %Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
-    Xfull = [ x0.FaList(:); x0.state(:)];
+    Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
+    %Xfull = [ x0.FaList(:); x0.state(:)];
     [MIobjfun,initVals.g] = problem.objective(Xfull);
     [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
     objectiveGradFA    = initVals.g(myidx.FaList);
-    %objectiveGradTR    = initVals.g(myidx.TR);
+    objectiveGradTR    = initVals.g(myidx.TR);
     objectiveGradState = initVals.g(myidx.state);
     jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
-    %jacobianTR    = initConst.ceqGrad(myidx.TR,:);
+    jacobianTR    = initConst.ceqGrad(myidx.TR,:);
     jacobianState = initConst.ceqGrad(myidx.state,:);
     adjointvar =-jacobianState \objectiveGradState ;
-    MIobjfun_Der = [objectiveGradFA] +  [jacobianFA] *   adjointvar ;
-    %MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
+    %MIobjfun_Der = [objectiveGradFA] +  [jacobianFA] *   adjointvar ;
+    MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
 end
