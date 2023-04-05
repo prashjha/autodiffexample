@@ -133,6 +133,7 @@ if optf
     end 
     lqp=length(xn{1}(:));
     syms statevariable    [Nspecies,Ntime,NGauss,NGauss,NGauss] real
+    syms auxstatevariable [Nspecies,Ntime,NGauss,NGauss,NGauss] real
     syms kplsymvar   [1 NGauss] positive real
     syms kvesymvar   [1 NGauss] positive real
     syms t0symvar    [1 NGauss] positive real
@@ -148,6 +149,7 @@ if optf
 
     disp('build state variable')
     statevariable(:,1,:,:,:) ==0;
+    auxstatevariable(:,1,:,:,:) ==0;
     TimeList = (0:(Ntime-1))*TRList ;
     %TimeList = [0;cumsum( TRList)]
     for iqp = 1:NGauss
@@ -234,6 +236,7 @@ if optf
 
         expATR = [ exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)))/(kplqp + kveqp/ve - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
         statevariable(:,iii+1,iqp,jqp,kqp) =  expATR *(cos(FaList(:,iii+1)).* statevariable(:,iii,iqp,jqp,kqp)) +  aifterm ;
+        auxstatevariable(:,iii+1,iqp,jqp,kqp) =  expATR *(cos(FaList(:,iii+1)).* auxstatevariable(:,iii,iqp,jqp,kqp)) +  aifterm ;
       end
     end
     end
@@ -251,11 +254,13 @@ if optf
     %% plot(dbgparams.TRList,Mzdbg(1,:),'b',dbgparams.TRList,Mzdbg(2,:),'k',dbgparams.TRList,mystate(1,:,1),'b--',dbgparams.TRList,mystate(2,:,1),'k--')
 
     disp('build objective function')
-    syms sumstatevariable [Nspecies,NGauss,NGauss,NGauss] real;
+    syms sumstatevariable [NGauss,NGauss,NGauss] real;
+    syms sumauxstatevariable [NGauss,NGauss,NGauss] real;
     for iqp = 1:NGauss
       for jqp = 1:NGauss
         for kqp = 1:NGauss
-       sumstatevariable(:,iqp,jqp,kqp) =  sum(sin(FaList) .*    statevariable(:,:,iqp,jqp,kqp),2);
+       sumstatevariable(iqp,jqp,kqp) =  sum(sum(sin(FaList) .*    statevariable(:,:,iqp,jqp,kqp),2),1);
+       sumauxstatevariable(iqp,jqp,kqp) =  sum(sum(sin(FaList) .*   auxstatevariable(:,:,iqp,jqp,kqp),2),1);
        %sumstatevariable(:,jjj) =  sum(sin(FaList).*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TimeList - t0qp  , jmalpha , jmbeta);zeros(1,Ntime)]  ),2);
     end 
     end 
@@ -269,31 +274,35 @@ if optf
     %  Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
     %end
     %for iii=1:lqp
-    for iqp = 1:NGauss
-      for jqp = 1:NGauss
-        for kqp = 1:NGauss
-        for jjj=1:lqp2
-            znu=xn2{1}(jjj) ;
-            lntermtmp=0;
-            %for kkk=1:lqp
-            for lqp = 1:NGauss
-              for mqp = 1:NGauss
-              lntermtmp  = wn3' *subs(exp(-(sumstatevariable(1,1,1,1)- sumstatevariable(1,1,1,:)).^2/sqrt(2)/signu)  , t0symvar', xn3{1} )
-             % for nqp = 1:NGauss
-             %   lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sumstatevariable(1,iqp,jqp,kqp)- sumstatevariable(1,lqp,mqp,nqp))^2/sqrt(2)/signu);
-             %   lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sumstatevariable(2,iqp,jqp,kqp)- sumstatevariable(2,lqp,mqp,nqp))^2/sqrt(2)/signu);
-             % end
-            end
-            end
-            % for function
-            lnterm = log(lntermtmp)+log(pi^(-1.5));
-            Hz = Hz + wn1(iqp) *wn2(jqp) *wn3(kqp) * wn2(jjj) * lnterm;
-        end
-    end
-    end
-    end
+    myintegrand = exp(-(sumstatevariable- sumauxstatevariable).^2/sqrt(2)/signu);
+    integrandsum  = sum(repmat(wn3,1,3,3).*subs(myintegrand , t0symvar',xn3{1}),3);
+    integrandsum2 = sum(repmat(wn2,1,3).*  subs(integrandsum,kvesymvar',xn2{1}),2);
+    integrandsum3 = sum(wn1.*              subs(integrandsum,kplsymvar',xn1{1})  );
+    %% for iqp = 1:NGauss
+    %%   for jqp = 1:NGauss
+    %%     for kqp = 1:NGauss
+    %%     for jjj=1:lqp2
+    %%         znu=xn2{1}(jjj) ;
+    %%         lntermtmp=0;
+    %%         %for kkk=1:lqp
+    %%         for lqp = 1:NGauss
+    %%           for mqp = 1:NGauss
+    %%           lntermtmp  = wn3' *subs(exp(-(sumstatevariable(1,1,1,1)- sumstatevariable(1,1,1,:)).^2/sqrt(2)/signu)  , t0symvar', xn3{1} )
+    %%          % for nqp = 1:NGauss
+    %%          %   lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sumstatevariable(1,iqp,jqp,kqp)- sumstatevariable(1,lqp,mqp,nqp))^2/sqrt(2)/signu);
+    %%          %   lntermtmp=lntermtmp + wn1(lqp) *wn2(mqp) *wn3(nqp) * exp(-(znu+sumstatevariable(2,iqp,jqp,kqp)- sumstatevariable(2,lqp,mqp,nqp))^2/sqrt(2)/signu);
+    %%          % end
+    %%         end
+    %%         end
+    %%         % for function
+    %%         lnterm = log(lntermtmp)+log(pi^(-1.5));
+    %%         Hz = Hz + wn1(iqp) *wn2(jqp) *wn3(kqp) * wn2(jjj) * lnterm;
+    %%     end
+    %% end
+    %% end
+    %% end
     %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
-    MIGaussObj = Hz;
+    MIGaussObj = integrandsum3 ;
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
