@@ -275,9 +275,9 @@ if optf
     %end
     %for iii=1:lqp
     myintegrand = exp(-(sumstatevariable- sumauxstatevariable).^2/sqrt(2)/signu);
-    integrandsum  = sum(repmat(wn3,1,3,3).*subs(myintegrand , t0symvar',xn3{1}),3);
-    integrandsum2 = sum(repmat(wn2,1,3).*  subs(integrandsum,kvesymvar',xn2{1}),2);
-    integrandsum3 = sum(wn1.*              subs(integrandsum,kplsymvar',xn1{1})  );
+    integrandsum  = sum(repmat(wn3,1,3,3).*subs(myintegrand  , t0symvar',xn3{1}),3);
+    integrandsum2 = sum(repmat(wn2,1,3).*  subs(integrandsum ,kvesymvar',xn2{1}),2);
+    integrandsum3 = sum(wn1.*              subs(integrandsum2,kplsymvar',xn1{1})  );
     %% for iqp = 1:NGauss
     %%   for jqp = 1:NGauss
     %%     for kqp = 1:NGauss
