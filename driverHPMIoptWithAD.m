@@ -28,7 +28,7 @@ tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd
 
 %% Variable Setup
 lnsr2pi = 0.9189385332046727; % log(sqrt(2*pi))
-Ntime = 2;
+Ntime = 30;
 TR = 3;
 TR_list = (0:(Ntime-1))*TR;
 M0 = [0,0];
@@ -124,7 +124,7 @@ if optf
     TRList = TR;
     % [0;cumsum( TR* ones(Ntime-1,1))]
 
-    NGauss  = 2
+    NGauss  = 4
     NumberUncertain=3;
     switch (NumberUncertain)
        case(3)
@@ -137,7 +137,6 @@ if optf
     end 
     lqp=length(xn{1}(:));
     syms statevariable    [Nspecies,Ntime,NGauss,NGauss,NGauss] real
-    syms auxstatevariable [Nspecies,Ntime,NGauss,NGauss,NGauss] real
     syms kplsymvar   [1 NGauss] positive real
     syms kvesymvar   [1 NGauss] positive real
     syms t0symvar    [1 NGauss] positive real
@@ -153,7 +152,6 @@ if optf
 
     disp('build state variable')
     statevariable(:,1,:,:,:) =0;
-    auxstatevariable(:,1,:,:,:) =0;
     TimeList = (0:(Ntime-1))*TRList ;
     %TimeList = [0;cumsum( TRList)]
     for iqp = 1:NGauss
@@ -240,7 +238,6 @@ if optf
 
         expATR = [ exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)),                   0; (kplqp*exp(-currentTR/T1Lqp) - kplqp*exp(-currentTR*(kplqp + kveqp/ve + 1/T1Pqp)))/(kplqp + kveqp/ve - 1/T1Lqp + 1/T1Pqp), exp(-currentTR/T1Lqp)];
         statevariable(:,iii+1,iqp,jqp,kqp) =  expATR *(cos(FaList(:,iii+1)).* statevariable(:,iii,iqp,jqp,kqp)) +  aifterm ;
-        auxstatevariable(:,iii+1,iqp,jqp,kqp) =  expATR *(cos(FaList(:,iii+1)).* auxstatevariable(:,iii,iqp,jqp,kqp)) +  aifterm ;
       end
     end
     end
@@ -259,30 +256,34 @@ if optf
 
     disp('build objective function')
     syms sumstatevariable [NGauss,NGauss,NGauss] real;
-    syms sumauxstatevariable [NGauss,NGauss,NGauss] real;
     for iqp = 1:NGauss
       for jqp = 1:NGauss
         for kqp = 1:NGauss
        sumstatevariable(iqp,jqp,kqp) =  sum(sum(sin(FaList) .*    statevariable(:,:,iqp,jqp,kqp),2),1);
-       sumauxstatevariable(iqp,jqp,kqp) =  sum(sum(sin(FaList) .*   auxstatevariable(:,:,iqp,jqp,kqp),2),1);
        %sumstatevariable(:,jjj) =  sum(sin(FaList).*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TimeList - t0qp  , jmalpha , jmbeta);zeros(1,Ntime)]  ),2);
     end 
     end 
     end 
-    %statematrix = optimexpr([lqp,lqp]);
-    expandvar  = ones(1,lqp);
-    %diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
+    syms okplsymvar   [1 NGauss] positive real
+    syms okvesymvar   [1 NGauss] positive real
+    syms ot0symvar    [1 NGauss] positive real
+    sumauxstatevariable =  subs(sumstatevariable   , kplsymvar,okplsymvar );
+    sumauxstatevariable =  subs(sumauxstatevariable, kvesymvar,okvesymvar );
+    sumauxstatevariable =  subs(sumauxstatevariable, t0symvar ,ot0symvar  );
+    expandvar  = ones(1,NGauss^NumberUncertain);
     Hz = 0;
     %for jjj=1:lqp2
     %  znu=xn2{1}(jjj) ;
     %  Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
     %end
     %for iii=1:lqp
-    %myintegrand = exp(-(sumstatevariable- sumauxstatevariable).^2/sqrt(2)/signu);
-    myintegrand = exp(-sumstatevariable.^2/sqrt(2)/signu);
-    integrandsum  = sum(repmat(wn3,1,NGauss,NGauss).*subs(myintegrand  , t0symvar',xn3{1}),3);
-    integrandsum2 = sum(repmat(wn2,1,NGauss).*  subs(integrandsum ,kvesymvar',xn2{1}),2);
-    integrandsum3 = sum(wn1.*              subs(integrandsum2,kplsymvar',xn1{1})  );
+    myintegrand = reshape(exp(-(sumstatevariable(:)* expandvar- expandvar'*sumauxstatevariable(:)').^2/sqrt(2)/signu),NGauss,NGauss,NGauss,NGauss,NGauss,NGauss);
+    integrandsum  =     sum(repmat(wn3,1,NGauss,NGauss,NGauss,NGauss,NGauss).*subs(myintegrand  ,  t0symvar',xn3{1}),6);
+    integrandsum2 =     sum(repmat(wn2,1,NGauss,NGauss,NGauss,NGauss).*       subs(integrandsum , kvesymvar',xn2{1}),5);
+    integrandsum3 = log(sum(repmat(wn1,1,NGauss,NGauss,NGauss).*              subs(integrandsum2, kplsymvar',xn1{1}),4));
+    integrandsum4 =     sum(repmat(wn3,1,NGauss,NGauss).*                     subs(integrandsum3,ot0symvar' ,xn3{1}),3);
+    integrandsum5 =     sum(repmat(wn2,1,NGauss).*                            subs(integrandsum4,okvesymvar',xn2{1}),2);
+    integrandsum6 =     sum(wn1.*                                             subs(integrandsum5,okplsymvar',xn1{1})  ) ;
     %% for iqp = 1:NGauss
     %%   for jqp = 1:NGauss
     %%     for kqp = 1:NGauss
@@ -307,7 +308,7 @@ if optf
     %% end
     %% end
     %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
-    MIGaussObj = double(integrandsum3 )
+    MIGaussObj = double(integrandsum6 )
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
