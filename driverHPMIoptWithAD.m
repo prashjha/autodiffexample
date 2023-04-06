@@ -3,6 +3,8 @@
 % Author: Chris Walker
 % Date: 8/6/2018
 
+symObj = syms;
+cellfun(@clear,symObj)
 clear all
 close all
 clc
@@ -26,7 +28,7 @@ tisinput=[T1pmean; T1pstdd; T1lmean; T1lstdd; kplmean; kplstdd; kvemean; kvestdd
 
 %% Variable Setup
 lnsr2pi = 0.9189385332046727; % log(sqrt(2*pi))
-Ntime = 30;
+Ntime = 2;
 TR = 3;
 TR_list = (0:(Ntime-1))*TR;
 M0 = [0,0];
@@ -38,7 +40,7 @@ opts = optimset('lsqcurvefit');
 opts.TolFun = 1e-09;
 opts.TolX = 1e-09;
 opts.Display = 'off';
-params = struct('t0',[t0mean(1);0],'gammaPdfA',[alphamean(1)  ;1],'gammaPdfB',[betamean(1);1],...
+params = struct('t0',[0;0],'gammaPdfA',[alphamean(1)  ;1],'gammaPdfB',[betamean(1);1],...
     'scaleFactor',VIF_scale_fact,'T1s',[T1pmean(1),T1lmean(1)],'ExchangeTerms',[0,kplmean(1) ;0,0],...
     'TRList',TR_list,'PerfusionTerms',[kvemean(1),0],'volumeFractions',ve,...
     'fitOptions', opts);
@@ -114,13 +116,15 @@ if optf
 
     % setup optimization variables
     Nspecies = 2
-    syms FaList [Nspecies,Ntime] positive real
+    %syms FaList [Nspecies,Ntime] positive real
+    %assume(FaList ,'clear')
+    FaList = ones(Nspecies,Ntime)* 20.* pi/180.;
     %TRList = optimvar('TR',Ntime-1,1,'LowerBound',0, 'UpperBound',5);%TR_list;
     %TRList = optimvar('TR','LowerBound',0, 'UpperBound',5);%TR_list;
     TRList = TR;
     % [0;cumsum( TR* ones(Ntime-1,1))]
 
-    NGauss  = 3
+    NGauss  = 2
     NumberUncertain=3;
     switch (NumberUncertain)
        case(3)
@@ -148,8 +152,8 @@ if optf
     lqp2=length(xn2{1}(:));
 
     disp('build state variable')
-    statevariable(:,1,:,:,:) ==0;
-    auxstatevariable(:,1,:,:,:) ==0;
+    statevariable(:,1,:,:,:) =0;
+    auxstatevariable(:,1,:,:,:) =0;
     TimeList = (0:(Ntime-1))*TRList ;
     %TimeList = [0;cumsum( TRList)]
     for iqp = 1:NGauss
@@ -274,9 +278,10 @@ if optf
     %  Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
     %end
     %for iii=1:lqp
-    myintegrand = exp(-(sumstatevariable- sumauxstatevariable).^2/sqrt(2)/signu);
-    integrandsum  = sum(repmat(wn3,1,3,3).*subs(myintegrand  , t0symvar',xn3{1}),3);
-    integrandsum2 = sum(repmat(wn2,1,3).*  subs(integrandsum ,kvesymvar',xn2{1}),2);
+    %myintegrand = exp(-(sumstatevariable- sumauxstatevariable).^2/sqrt(2)/signu);
+    myintegrand = exp(-sumstatevariable.^2/sqrt(2)/signu);
+    integrandsum  = sum(repmat(wn3,1,NGauss,NGauss).*subs(myintegrand  , t0symvar',xn3{1}),3);
+    integrandsum2 = sum(repmat(wn2,1,NGauss).*  subs(integrandsum ,kvesymvar',xn2{1}),2);
     integrandsum3 = sum(wn1.*              subs(integrandsum2,kplsymvar',xn1{1})  );
     %% for iqp = 1:NGauss
     %%   for jqp = 1:NGauss
@@ -302,7 +307,7 @@ if optf
     %% end
     %% end
     %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
-    MIGaussObj = integrandsum3 ;
+    MIGaussObj = double(integrandsum3 )
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
