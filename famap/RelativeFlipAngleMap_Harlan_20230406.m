@@ -70,6 +70,8 @@ pyruvateFA = 20.*.01*Flip_Angle_Map;
 lactateFA = 30.*.01*Flip_Angle_Map;
 niftiwrite(pyruvateFA,'famappyr.nii')
 niftiwrite(lactateFA ,'famaplac.nii')
+min(pyruvateFA(:))
+max(pyruvateFA(:))
 
 % NOTE: The measurements of the clamshell are as follows:
 % 
