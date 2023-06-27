@@ -138,7 +138,7 @@ if optf
 
       klpqp   =    0 ;  
     % sample point
-      samplepoint = randn(NumberUncertain ,1).* tisinput(2:2:14) + tisinput(1:2:13);
+      %samplepoint = randn(NumberUncertain ,1).* tisinput(2:2:14) + tisinput(1:2:13);
       T1Pqp   = optimvar('T1P');
       T1Lqp   = optimvar('T1L');
       kplqp   = optimvar('kpl');
@@ -252,7 +252,12 @@ if optf
     %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
     [initobj,initgrad] = Fx(xinit);
     fishermatrix = 1/signu * (initgrad * initgrad')
-    crlb = inv(fishermatrix ) 
+    % outer product matrix is singular
+    % compute for kpl only
+    kplminvar = 1./fishermatrix(3,3)
+    %crlb = inv(fishermatrix ) 
+    %[V,D] = eig(fishermatrix );
+    %Finv = V*inv(D)*V.';
     %% [designopt,fval,exitflag,output,lambda,grad,hessian] ...
     %%  =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
     %%     optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
@@ -288,14 +293,17 @@ function [MIobjfun, MIobjfun_Der]=hpConditionalProbability(xopt,problem,myidx,Ns
     x0.state  = evaluate(auxvariable ,xopt);
     %Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
     Xfull = [xopt.T1L; xopt.T1P; xopt.kpl; xopt.kve; x0.state(:)];
+    %Xfull = [xopt.T1L; xopt.T1P; xopt.kpl;  x0.state(:)];
       
     [MIobjfun,initVals.g] = problem.objective(Xfull);
     [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
     objectiveGradFA    = initVals.g([myidx.T1L; myidx.T1P; myidx.kpl; myidx.kve]);
+    %objectiveGradFA    = initVals.g([myidx.T1L; myidx.T1P; myidx.kpl]);
     
     %objectiveGradTR    = initVals.g(myidx.TR);
     objectiveGradState = initVals.g(myidx.state);
     jacobianFA    = initConst.ceqGrad([myidx.T1L; myidx.T1P; myidx.kpl; myidx.kve],:);
+    %jacobianFA    = initConst.ceqGrad([myidx.T1L; myidx.T1P; myidx.kpl],:);
     %jacobianTR    = initConst.ceqGrad(myidx.TR,:);
     jacobianState = initConst.ceqGrad(myidx.state,:);
     adjointvar =-jacobianState \objectiveGradState ;
