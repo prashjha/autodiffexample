@@ -52,7 +52,7 @@ for i = 1:numel(FAType)
         case('Const') % Nagashima for lactate const 10 pyruvate
             for n = 1:Ntime
                 %flips(2,n) = acos(sqrt((E1(2)^2-E1(2)^(2*(N-n+1)))/(1-E1(2)^(2*(N-n+1)))));
-                flips(2,n) = 15*pi/180;
+                flips(2,n) = 30*pi/180;
                 flips(1,n) = 20*pi/180;
             end
             params.FaList = flips;
@@ -123,10 +123,10 @@ if optf
     auxvariable      = optimexpr(    [Nspecies,Ntime]);
     stateconstraint  = optimconstr(  [Nspecies,Ntime]);
 
-    modelSNR = 20 ; % TODO - FIXME
-    signuImage = (max(Mxy(1,:))+max(Mxy(2,:)))/2/modelSNR;
+    snrList = [2,5,10,15,20];
+    signuImage = snrList.^(-1) *(max(Mxy(1,:))+max(Mxy(2,:)))/2;
     % walker paper is peak pyruvate only
-    signuImage = max(Mxy(1,:))/modelSNR;
+    signuImage = snrList.^(-1) *max(Mxy(1,:));
     % variance for Gauss RV is sum. sqrt for std
     signu = sqrt(2* Ntime) * signuImage;
 
@@ -203,58 +203,64 @@ if optf
       end
 
     disp('build objective function')
-    sumstatevariable = optimexpr([Nspecies]);
-    sumstatevariable =  sum(sin(FaList).*(ve*statevariable  + (1-ve) *jmA0  * [gampdf( TimeList - t0qp  , alphaqp , betaqp);zeros(1,Ntime)]  ),2);
+    sumstatevariable =  sin(FaList).*(ve*statevariable  + (1-ve) *jmA0  * [gampdf( TimeList - t0qp  , alphaqp , betaqp);zeros(1,Ntime)]  );
     %statematrix = optimexpr([lqp,lqp]);
-    signalmodel =  sum(sumstatevariable,1);
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
     
     disp('create optim prob')
-    convprob = optimproblem('Objective',signalmodel , "Constraints",stateconstraint);
-    myidx = varindex(convprob )
-    %% 
-    % View the new problem.
-    
-    %show(convprob)
-    problem = prob2struct(convprob,'ObjectiveFunctionName','reducedObjective','ConstraintFunctionName','reducedConstraint');
-    %% extraParamsobj = functions(problem.objective).workspace{1}.extraParams;
-    %% extraParamscon = functions(problem.nonlcon).workspace{1}.extraParams;
-    %% 
-    % Solve the new problem. The solution is essentially the same as before.
-    
+    %% FIXME TODO HACK look over each and accumulate --- formulate full space instead
+    kplgrad = zeros(Nspecies,Ntime);
+    for jjj = 1:Nspecies
+      for kkk = 1:Ntime
+        convprob = optimproblem('Objective',sumstatevariable(jjj,kkk), "Constraints",stateconstraint);
+        myidx = varindex(convprob )
+        %show(convprob)
+        %% 
+        % View the new problem.
+        
+        problem = prob2struct(convprob,'ObjectiveFunctionName','reducedObjective','ConstraintFunctionName','reducedConstraint');
+        %% extraParamsobj = functions(problem.objective).workspace{1}.extraParams;
+        %% extraParamscon = functions(problem.nonlcon).workspace{1}.extraParams;
+        %% 
+        % Solve the new problem. The solution is essentially the same as before.
+        
 
-    % truthconstraint = infeasibility(stateconstraint,x0);
-    %InitialGuess =  [flips(:);TR* ones(Ntime-1,1) ];   
-    %pmin =  [flips(:)*0;zeros(Ntime-1,1)   ];     
-    %pmax =  [flips(:)*0+35*pi/180;5*ones(Ntime-1,1) ];
-    %InitialGuess =  [flips(:);TR ];   
-    %pmin =  [flips(:)*0;0 ];     
-    %pmax =  [flips(:)*0+35*pi/180;5 ];
-    xinit.T1P =T1pmean;
-    xinit.T1L =T1lmean;
-    xinit.kpl =kplmean;
-    xinit.kve =kvemean;
-    %pmin =  [flips(:)*0 ];     
-    %pmax =  [flips(:)*0+35*pi/180 ];
-    tolx=1.e-9;
-    tolfun=5.e-4;
-    maxiter=400;
+        % truthconstraint = infeasibility(stateconstraint,x0);
+        %InitialGuess =  [flips(:);TR* ones(Ntime-1,1) ];   
+        %pmin =  [flips(:)*0;zeros(Ntime-1,1)   ];     
+        %pmax =  [flips(:)*0+35*pi/180;5*ones(Ntime-1,1) ];
+        %InitialGuess =  [flips(:);TR ];   
+        %pmin =  [flips(:)*0;0 ];     
+        %pmax =  [flips(:)*0+35*pi/180;5 ];
+        xinit.T1P =T1pmean;
+        xinit.T1L =T1lmean;
+        xinit.kpl =kplmean;
+        xinit.kve =kvemean;
+        %pmin =  [flips(:)*0 ];     
+        %pmax =  [flips(:)*0+35*pi/180 ];
+        tolx=1.e-9;
+        tolfun=5.e-4;
+        maxiter=400;
 
-    Fx = @(x) hpConditionalProbability(x, problem, myidx,Nspecies,Ntime,auxvariable);
-    %% debug info
-    %% x0.FaList = params.FaList;
-    %% x0.state  = evaluate(auxvariable ,x0);
-    %% mystate = evaluate( sumstatevariable ,x0);
-    %% Xfull = [ x0.FaList(:); x0.state(:)];
-    %% [MIobjfun,initVals.g] = problem.objective(Xfull);
-    %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
-    [initobj,initgrad] = Fx(xinit);
-    fishermatrix = 1/signu * (initgrad * initgrad')
-    % outer product matrix is singular
-    % compute for kpl only
-    kplminvar = 1./fishermatrix(3,3)
+        Fx = @(x) hpConditionalProbability(x, problem, myidx,Nspecies,Ntime,auxvariable);
+        %% debug info
+        %% x0.FaList = params.FaList;
+        %% x0.state  = evaluate(auxvariable ,x0);
+        %% mystate = evaluate( sumstatevariable ,x0);
+        %% Xfull = [ x0.FaList(:); x0.state(:)];
+        %% [MIobjfun,initVals.g] = problem.objective(Xfull);
+        %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
+        [initobj,initgrad] = Fx(xinit);
+        kplgrad(jjj,kkk) = initgrad(3);
+      end
+    end
+    % fishermatrix =  (initgrad * initgrad')
+    % % outer product matrix is singular
+    % % compute for kpl only
+    % kplminvar = 1./fishermatrix(3,3) * signu.^2
+    kplminvar = signuImage/sqrt( sum(sum(kplgrad.^2)))
     %crlb = inv(fishermatrix ) 
     %[V,D] = eig(fishermatrix );
     %Finv = V*inv(D)*V.';

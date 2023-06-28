@@ -453,6 +453,9 @@ myplotlabel(8) = cellstr("K_{OED_{20}}")
 myplotlabel(9) = cellstr("K_{OED_{2}}")
 myplotlabel(10) = cellstr("K_{OED_{10}}")
 myplotlabel(11) = cellstr("K_{OED_{20}}")
+kplminvar = [ 0.061200481705974 ; 0.009792077072956 ; 0.002448019268239 ; 0.001088008563662 ; 0.000612004817060];
+kplminvar = [ 0.031937564535088 ; 0.0127750258140352; 0.00638751290701759;0.00425834193801173;0.0031937564535088];
+kplminvar = [0.0418126222071423 ; 0.0167250488828569; 0.00836252444142845;0.00557501629428564;0.00418126222071423];
 for isolver = 1:numplots 
   idplot = idplot+1
   handle = figure(idplot )
@@ -460,7 +463,8 @@ for isolver = 1:numplots
   inversemean = mean(storekplopt(1:num_trials,:),1)
   plot( snrList , ones(1,length(snrList))*solnList(end).params.ExchangeTerms(1,2) , 'g','linewidth',2) 
   hold
-  errorbar(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList)),2*inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)),'s','LineStyle','none', 'Color', 'b','linewidth', 2);
+  errorbar(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList)),inversestd((isolver-1)*length(snrList)+1:isolver*length(snrList)),'s','LineStyle','none', 'Color', 'b','linewidth', 2,'CapSize',16);
+  errorbar(snrList,inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList)),kplminvar ,'s','LineStyle','none', 'Color', 'r','linewidth', 1,'CapSize',16);
   ylabel('fit kpl (sec^{-1})')
   xlabel('SNR_{data}')
   xlim([0 30])
@@ -470,7 +474,7 @@ for isolver = 1:numplots
   text(snrList,min([inversemean((isolver-1)*length(snrList)+1:isolver*length(snrList));myupperb(isolver,:)])-textscale(isolver,:), sprintfc('\\sigma=%6.4f',inversestd( (isolver-1)*length(snrList)+1:isolver*length(snrList))) )
   text(25,.1, string(myplotlabel(isolver))  )
   title(myplottitle(isolver) )
-  legend('truth','fit')
+  legend('truth','fit','CRLB')
   set(gca,'FontSize',16)
   saveas(handle,sprintf('solversummaryNP%d%s',numberParameters,solnList((isolver-1)*length(snrList)+1).plotlabel),'png')
 end
@@ -481,10 +485,10 @@ boxplot(  storekplopt(1:num_trials,:), {solnList(:).plotlabel} )
 ylim([0 .4])
 saveas(handle,'globalboxplot','png')
  
-    
 % create legend for index
 %solnTable = struct2table(solnList)
 %solnTable.myindex = [1:60]'
+
 
 % analysis of variance
 constDirectSumQuadSNR25 = 16
@@ -494,6 +498,9 @@ constDirectSumQuadSNR20 = 15
 constMaxSNR20 = 27
 paretoP20L28MaxSNR20 = 51
 
+inversestdrsh = reshape(inversestd,5,11)
+kplminvar < inversestdrsh
+    
 %% % test tha variance of constDirectSumQuadSNR25  is less than constMaxSNR25 
 %% [myh,myp,myci,mystats] = vartest2(storekplopt(1:num_trials,constDirectSumQuadSNR25 ),storekplopt(1:num_trials,constMaxSNR25 ),'Tail','left')
 %% [myh2,myp2,myci2,mystats2] = vartest2(storekplopt(1:num_trials,paretoP20L28MaxSNR25 ),storekplopt(1:num_trials,constMaxSNR25 ),'Tail','both')
