@@ -211,10 +211,10 @@ if optf
     
     disp('create optim prob')
     %% FIXME TODO HACK look over each and accumulate --- formulate full space instead
-    kplgrad = zeros(Nspecies,Ntime);
-    for jjj = 1:Nspecies
-      for kkk = 1:Ntime
-        convprob = optimproblem('Objective',sumstatevariable(jjj,kkk), "Constraints",stateconstraint);
+    paramgrad = zeros(Ntime,Nspecies,4);
+    for jjj = 1:Ntime
+      for kkk = 1:Nspecies
+        convprob = optimproblem('Objective',sumstatevariable(kkk,jjj), "Constraints",stateconstraint);
         myidx = varindex(convprob )
         %show(convprob)
         %% 
@@ -253,17 +253,25 @@ if optf
         %% [MIobjfun,initVals.g] = problem.objective(Xfull);
         %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
         [initobj,initgrad] = Fx(xinit);
-        kplgrad(jjj,kkk) = initgrad(3);
+        paramgrad(jjj,kkk,:) = initgrad;
       end
     end
-    % fishermatrix =  (initgrad * initgrad')
-    % % outer product matrix is singular
-    % % compute for kpl only
-    % kplminvar = 1./fishermatrix(3,3) * signu.^2
-    kplminvar = signuImage/sqrt( sum(sum(kplgrad.^2)))
-    %crlb = inv(fishermatrix ) 
-    %[V,D] = eig(fishermatrix );
-    %Finv = V*inv(D)*V.';
+    t1lgrad=paramgrad(:,:,1);
+    t1pgrad=paramgrad(:,:,2);
+    kplgrad=paramgrad(:,:,3);
+    kvegrad=paramgrad(:,:,4);
+    fishermatrix = [t1lgrad(:)'* t1lgrad(:), t1lgrad(:)'* t1pgrad(:), t1lgrad(:)'* kplgrad(:), t1lgrad(:)'* kvegrad(:);
+                    t1pgrad(:)'* t1lgrad(:), t1pgrad(:)'* t1pgrad(:), t1pgrad(:)'* kplgrad(:), t1pgrad(:)'* kvegrad(:);
+                    kplgrad(:)'* t1lgrad(:), kplgrad(:)'* t1pgrad(:), kplgrad(:)'* kplgrad(:), kplgrad(:)'* kvegrad(:);
+                    kvegrad(:)'* t1lgrad(:), kvegrad(:)'* t1pgrad(:), kvegrad(:)'* kplgrad(:), kvegrad(:)'* kvegrad(:)];;
+    mycrlb{1} = inv( 1/signuImage(1)^2 * fishermatrix );
+    mycrlb{2} = inv( 1/signuImage(2)^2 * fishermatrix );
+    mycrlb{3} = inv( 1/signuImage(3)^2 * fishermatrix );
+    mycrlb{4} = inv( 1/signuImage(4)^2 * fishermatrix );
+    mycrlb{5} = inv( 1/signuImage(5)^2 * fishermatrix );
+    couplekplminvar  = [mycrlb{1}(3,3), mycrlb{2}(3,3), mycrlb{3}(3,3), mycrlb{4}(3,3), mycrlb{5}(3,3)].^(1/2)
+    % compute for kpl only
+    kplminvar = signuImage/sqrt( fishermatrix(3,3))
     %% [designopt,fval,exitflag,output,lambda,grad,hessian] ...
     %%  =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
     %%     optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
