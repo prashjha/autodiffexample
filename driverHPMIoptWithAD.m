@@ -104,7 +104,6 @@ end
 %% optimize MI for TR and FA
 optf = true;
 if optf
-    tic;
     % Convert this function file to an optimization expression.
     
     % Furthermore, you can also convert the |rosenbrock| function handle, which 
@@ -255,6 +254,7 @@ if optf
     %% [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
     %% [myobjfun, myobjfun_Der]= Fx(InitialGuess)
         %%maxiter,'Display','iter-detailed','Hessian',{'lbfgs',1}, 'HessMult',@myHessMultFcn,...
+    tic;
     [designopt,fval,exitflag,output,lambda,grad,hessian] ...
      =fmincon(Fx, InitialGuess ,[],[],[],[],pmin,pmax,[],...
         optimset('TolX',tolx,'TolFun',tolfun,'MaxIter', ...
@@ -287,8 +287,7 @@ if optf
     ylabel('MI FA')
     xlabel('sec')
     handle = figure(8)
-    plot(optparams.TRList,Mzopt(1,:),'b',optparams.TRList,Mzopt(2,:),'k',optparams.TRList,cos(optparams.FaList(1,:)).*mystate(1,:,1),'b--',optparams.TRList,cos(optparams.FaList(2,:)).*mystate(2,:,1),'k--')
-    plot(optparams.TRList,Mzopt(1,:),'b',optparams.TRList,Mzopt(2,:),'k',optparams.TRList,mystate(1,:,1),'b--',optparams.TRList,mystate(2,:,1),'k--')
+    plot(optparams.TRList,Mzopt(1,:),'b',optparams.TRList,Mzopt(2,:),'k',optparams.TRList,cos(optparams.FaList(1,:)).*mystate(1,1:nsubstep:(Ntime-1)*nsubstep+1,1),'b--',optparams.TRList,cos(optparams.FaList(2,:)).*mystate(2,1:nsubstep:(Ntime-1)*nsubstep+1,1),'k--')
     ylabel('MI Mz ')
     xlabel('sec'); legend('Pyr','Lac')
 end 
