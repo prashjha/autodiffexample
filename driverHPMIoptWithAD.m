@@ -202,16 +202,14 @@ if optf
     sumstatevariable = optimexpr([Nspecies,lqp]);
     for jjj = 1:lqp
        %sumstatevariable(:,jjj) =  sum(sin(FaList) .*    statevariable(:,:,jjj),2);
-       sumstatevariable(:,jjj) =  sum(sin(FaList).*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( TR_list - t0qp  , jmalpha , jmbeta);zeros(1,Ntime)]  ),2);
+       sumstatevariable(:,jjj) =  sum(sin(subFaList).*(ve*statevariable(:,:,jjj)  + (1-ve) *jmA0  * [gampdf( SubTimeList - t0qp  , jmalpha , jmbeta);zeros(1,(Ntime-1)*nsubstep+1)]  ),2);
     end 
-    %statematrix = optimexpr([lqp,lqp]);
     expandvar  = ones(1,lqp);
     diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
     Hz = 0;
     for jjj=1:lqp2
       znu=xn2{1}(jjj) ;
       Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
-      %Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2                             ) * wn(:)));
     end
     %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
     MIGaussObj = Hz;
