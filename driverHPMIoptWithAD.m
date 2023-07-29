@@ -228,7 +228,7 @@ if optf
     tolfun=5.e-4;
     maxiter=400;
 
-    Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable);
+    Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable,lqp);
     %% debug info
     %% x0.FaList = params.FaList;
     %% x0.state  = evaluate(auxvariable ,x0);
@@ -282,25 +282,28 @@ function W = myHessMultFcn(x,lambda,v)
 end
 
 
-function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable)
-    x0.FaList = reshape(xopt(myidx.FaList),Nspecies,Ntime);
-    x0.TR     = xopt(myidx.TR);
-    x0.state  = evaluate(auxvariable ,x0);
-    %Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
-    Xfull = [ x0.FaList(:); x0.TR; x0.state(:)];
-    %Xfull = [ x0.FaList(:); x0.state(:)];
-    [MIobjfun,initVals.g] = problem.objective(Xfull);
-    [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
-    objectiveGradFA    = initVals.g(myidx.FaList);
-    objectiveGradTR    = initVals.g(myidx.TR);
-    objectiveGradState = initVals.g(myidx.state);
-    jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
-    jacobianTR    = initConst.ceqGrad(myidx.TR,:);
-    jacobianState = initConst.ceqGrad(myidx.state,:);
-    adjointvar =-jacobianState \objectiveGradState ;
-    %MIobjfun_Der = [objectiveGradFA] +  [jacobianFA] *   adjointvar ;
-    MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
+function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable,lqp,xn)
     for iqp = 1:lqp
+      x0.kpl = xn{1}(iqp);
+      x0.kve = xn{2}(iqp);
+      x0.t0  = xn{3}(iqp);
+      x0.FaList = reshape(xopt(myidx.FaList),Nspecies,Ntime);
+      x0.TR     = xopt(myidx.TR);
+      x0.state  = evaluate(auxvariable ,x0);
+      %Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
+      Xfull = [ x0.FaList(:); x0.TR; x0.state(:)];
+      %Xfull = [ x0.FaList(:); x0.state(:)];
+      [MIobjfun,initVals.g] = problem.objective(Xfull);
+      [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
+      objectiveGradFA    = initVals.g(myidx.FaList);
+      objectiveGradTR    = initVals.g(myidx.TR);
+      objectiveGradState = initVals.g(myidx.state);
+      jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
+      jacobianTR    = initConst.ceqGrad(myidx.TR,:);
+      jacobianState = initConst.ceqGrad(myidx.state,:);
+      adjointvar =-jacobianState \objectiveGradState ;
+      %MIobjfun_Der = [objectiveGradFA] +  [jacobianFA] *   adjointvar ;
+      MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
     end
     for jjj = 1:lqp
     end 
