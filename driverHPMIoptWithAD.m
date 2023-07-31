@@ -142,8 +142,8 @@ if optf
     lqp2=length(xn2{1}(:));
 
     disp('build state variable')
-    stateconstraint(:,1,:)  = statevariable(:,1,:) ==0;
-    auxvariable(:,1,:) =0;
+    stateconstraint(:,1)  = statevariable(:,1) ==0;
+    auxvariable(:,1) =0;
     switch (NumberUncertain)
        case(3)
          T1Pqp   = T1pmean;
@@ -163,39 +163,52 @@ if optf
 
     % precompute
     A = [(-kplqp -kveqp/ve -1/T1Pqp), 0; kplqp, -1/T1Lqp ]
-    A_inv = inv(A)
+    % syms a  kpl d subTR    T1P kveqp T1L 
+    % A_inv = inv([a,  0; kpl, d ])
+    % 
+    % A_inv =
+    % 
+    % [       1/a,   0]
+    % [-kpl/(a*d), 1/d]
+    % >> a = -1/T1P - kpl - kveqp/ve
+    % >> d = -1/T1L
+    % >> eval(A_inv )
+    %    ans =
+    %    
+    %    [        -1/(kpl + kveqp/ve + 1/T1P),    0]
+    %    [-(T1L*kpl)/(kpl + kveqp/ve + 1/T1P), -T1L]
+    A_inv = [        -1/(kplqp + kveqp/ve + 1/T1Pqp),    0; -(T1Lqp*kplqp)/(kplqp + kveqp/ve + 1/T1Pqp), -T1Lqp];
     A_inv_sq = A_inv^2
     subTR = TRList /nsubstep;
+    % >> syms a  kpl d subTR    T1P kveqp T1L 
+    % >> expATR = expm([a,  0; kpl, d ] * subTR )
+    % 
+    % expATR =
+    % 
+    % [                                     exp(a*subTR),                0]
+    % [(kpl*exp(a*subTR) - kpl*exp(subTR*d))/(a - d), exp(subTR*d)]
+    % 
+    % >> a = -1/T1P - kpl - kveqp
+    % >> d = -1/T1L
+    % >> eval(expATR)
+    % 
+    % ans =
+    % 
+    % [                                                              exp(-subTR*(kpl + kveqp + 1/T1P)),                   0]
+    % [(kpl*exp(-subTR/T1L) - kpl*exp(-subTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-subTR/T1L)]
+    %    
+    expAsubTR = [ exp(-subTR*(kplqp + kveqp/ve + 1/T1Pqp)),                   0; (kplqp*exp(-subTR/T1Lqp) - kplqp*exp(-subTR*(kplqp + kveqp/ve + 1/T1Pqp)))/(kplqp + kveqp/ve - 1/T1Lqp + 1/T1Pqp), exp(-subTR/T1Lqp)];
 
     % loop over time
     for iii = 1:(Ntime-1)*nsubstep
-      % >> syms a  kpl d subTR    T1P kveqp T1L 
-      % >> expATR = expm([a,  0; kpl, d ] * subTR )
-      % 
-      % expATR =
-      % 
-      % [                                     exp(a*subTR),                0]
-      % [(kpl*exp(a*subTR) - kpl*exp(subTR*d))/(a - d), exp(subTR*d)]
-      % 
-      % >> a = -1/T1P - kpl - kveqp
-      % >> d = -1/T1L
-      % >> eval(expATR)
-      % 
-      % ans =
-      % 
-      % [                                                              exp(-subTR*(kpl + kveqp + 1/T1P)),                   0]
-      % [(kpl*exp(-subTR/T1L) - kpl*exp(-subTR*(kpl + kveqp + 1/T1P)))/(kpl + kveqp - 1/T1L + 1/T1P), exp(-subTR/T1L)]
-      %    
-
-      expAsubTR = [ exp(-subTR*(kplqp + kveqp/ve + 1/T1Pqp)),                   0; (kplqp*exp(-subTR/T1Lqp) - kplqp*exp(-subTR*(kplqp + kveqp/ve + 1/T1Pqp)))/(kplqp + kveqp/ve - 1/T1Lqp + 1/T1Pqp), exp(-subTR/T1Lqp)];
-      aifterm = - kveqp/ve*A_inv*(eye(2) - expAsubTR)*VIF_scale_fact.*[gampdf(SubTimeList(iii)-t0qp , alphamean, betamean);0] ...
-                + A_inv_sq*(expAsubTR-(A*subTR)-eye(2))*kveqp/ve/subTR*VIF_scale_fact.* [gampdf(SubTimeList(iii+1)-t0qp, alphamean, betamean)-gampdf(SubTimeList(iii)-t0qp, alphamean, betamean);0];
-      auxvariable(:,iii+1) = expAsubTR*(cos(subFaList(:,iii)).*(auxvariable(:,iii))) + aifterm ;
+      aifterm   = - kveqp/ve*A_inv*(eye(2) - expAsubTR)*VIF_scale_fact.*[(SubTimeList(iii)+t0qp ).^(alphamean-1).* exp(-(SubTimeList(iii)+t0qp )/ betamean) /(betamean^alphamean* gamma(alphamean));0] ...
+                + A_inv_sq*(expAsubTR-(A*subTR)-eye(2))*kveqp/ve/subTR*VIF_scale_fact.* [(SubTimeList(iii+1)+t0qp ).^(alphamean-1).* exp(-(SubTimeList(iii+1)+t0qp )/ betamean) /(betamean^alphamean* gamma(alphamean))-(SubTimeList(iii)+t0qp ).^(alphamean-1).* exp(-(SubTimeList(iii)+t0qp )/ betamean) /(betamean^alphamean* gamma(alphamean));0];
+      auxvariable(:,iii+1) = expAsubTR*(cos(subFaList(:,iii)).*(auxvariable(:,iii))) + aifterm          ;
       stateconstraint(:,iii+1) = statevariable(:,iii+1) ==  expAsubTR *(cos(subFaList(:,iii)).*statevariable(:,iii))   + aifterm ;
     end
 
     disp('build objective function')
-    sumstatevariable =  sum(sum(sin(subFaList).*(ve*statevariable(:,:)  + (1-ve) *jmA0  * [gampdf( SubTimeList - t0qp  , jmalpha , jmbeta);zeros(1,(Ntime-1)*nsubstep+1)]  ),2));
+    sumstatevariable =  sum(sum(sin(subFaList).*(ve*statevariable  + (1-ve) *jmA0  * [(SubTimeList+t0qp ).^(alphamean-1).* exp(-(SubTimeList+t0qp )/ betamean) /(betamean^alphamean* gamma(alphamean));zeros(1,(Ntime-1)*nsubstep+1)]  ),2));
 
     %% 
     % Create an optimization problem using these converted optimization expressions.
@@ -228,7 +241,7 @@ if optf
     tolfun=5.e-4;
     maxiter=400;
 
-    Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable,lqp);
+    Fx = @(x) MIGHQuadHPTofts(x, problem, myidx,Nspecies,Ntime,auxvariable,lqp,xn,expAsubTR ,aifterm,subFaList,SubTimeList);
     %% debug info
     %% x0.FaList = params.FaList;
     %% x0.state  = evaluate(auxvariable ,x0);
@@ -282,38 +295,52 @@ function W = myHessMultFcn(x,lambda,v)
 end
 
 
-function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable,lqp,xn)
-    for iqp = 1:lqp
+function [MIobjfun, MIobjfun_Der]=MIGHQuadHPTofts(xopt,problem,myidx,Nspecies,Ntime,auxvariable,lqp,xn,expAsubTR ,aifterm,subFaList,SubTimeList)
+    MIobjfun =0;
+    MIobjfun_Der = zeros(size(xopt));
+    parfor(iqp = 1:lqp,4)
+      x0= struct();
       x0.kpl = xn{1}(iqp);
       x0.kve = xn{2}(iqp);
       x0.t0  = xn{3}(iqp);
       x0.FaList = reshape(xopt(myidx.FaList),Nspecies,Ntime);
       x0.TR     = xopt(myidx.TR);
+      disp(sprintf('evaluate aux %d',iqp))
       x0.state  = evaluate(auxvariable ,x0);
       %Xfull = [ x0.FaList(:); x0.TR(:); x0.state(:)];
-      Xfull = [ x0.FaList(:); x0.TR; x0.state(:)];
+      Xfull = [ x0.FaList(:);x0.TR;x0.kpl;x0.kve; x0.state(:);x0.t0];
       %Xfull = [ x0.FaList(:); x0.state(:)];
-      [MIobjfun,initVals.g] = problem.objective(Xfull);
+      %x0.state
+      %evaluate(subFaList,x0)
+      %evaluate(cos(subFaList),x0)
+      %evaluate(expAsubTR,x0)
+      %evaluate(aifterm,x0)
+      disp('evaluate objective')
+      [MIobjfun_iqp,mygradient] = problem.objective(Xfull);
+      MIobjfun = MIobjfun+MIobjfun_iqp;
+      disp('evaluate constraint')
+      initConst = struct();
       [initConst.ineq,initConst.ceq, initConst.ineqGrad,initConst.ceqGrad] = problem.nonlcon(Xfull);
-      objectiveGradFA    = initVals.g(myidx.FaList);
-      objectiveGradTR    = initVals.g(myidx.TR);
-      objectiveGradState = initVals.g(myidx.state);
+      disp('constraint complete')
+      objectiveGradFA    = mygradient(myidx.FaList);
+      objectiveGradTR    = mygradient(myidx.TR);
+      objectiveGradState = mygradient(myidx.state);
       jacobianFA    = initConst.ceqGrad(myidx.FaList,:);
       jacobianTR    = initConst.ceqGrad(myidx.TR,:);
       jacobianState = initConst.ceqGrad(myidx.state,:);
       adjointvar =-jacobianState \objectiveGradState ;
       %MIobjfun_Der = [objectiveGradFA] +  [jacobianFA] *   adjointvar ;
-      MIobjfun_Der = [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
+      MIobjfun_Der = MIobjfun_Der + [objectiveGradFA;objectiveGradTR] +  [jacobianFA;jacobianTR    ] *   adjointvar ;
     end
-    for jjj = 1:lqp
-    end 
-    expandvar  = ones(1,lqp);
-    diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
-    Hz = 0;
-    for jjj=1:lqp2
-      znu=xn2{1}(jjj) ;
-      Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
-    end
-    %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
-    MIGaussObj = Hz;
+    %% for jjj = 1:lqp
+    %% end 
+    %% expandvar  = ones(1,lqp);
+    %% diffsumm =(sumstatevariable(1,:)+sumstatevariable(2,:))' * expandvar   - expandvar' * (sumstatevariable(1,:)+sumstatevariable(2,:));
+    %% Hz = 0;
+    %% for jjj=1:lqp2
+    %%   znu=xn2{1}(jjj) ;
+    %%   Hz = Hz + wn2(jjj) * (wn(:)' * log(exp(-(znu + diffsumm).^2/2/signu^2 - log(signu) -log(2*pi)/2   ) * wn(:)));
+    %% end
+    %% %% MIGaussObj = Hz/sqrt(pi)^(NumberUncertain+1); 
+    %% MIGaussObj = Hz;
 end
