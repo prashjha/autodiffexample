@@ -56,6 +56,8 @@ handle = figure(3);plot(mivalues{3}(:),varvalues{3}(:),'bx');xlabel('MI');ylabel
 handle = figure(4);plot(mivalues{4}(:),varvalues{4}(:),'kx');xlabel('MI');ylabel('var'); title(sprintf('SNR%02d',SNRList(4)));set(gca,'FontSize',16);lsline;saveas(handle,sprintf('kplvarSNR%02d',SNRList(4)),'png')
 handle = figure(5);plot(mivalues{5}(:),varvalues{5}(:),'mx');xlabel('MI');ylabel('var'); title(sprintf('SNR%02d',SNRList(5)));set(gca,'FontSize',16);lsline;saveas(handle,sprintf('kplvarSNR%02d',SNRList(5)),'png')
 
+nonnanidx = ~isnan(mivalues{5}(:))
+rsnr20 = corrcoef( mivalues{5}(nonnanidx ),varvalues{5}(nonnanidx) )
 
 
 
